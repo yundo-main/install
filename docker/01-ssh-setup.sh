@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# ssh-setup.sh — macOS 클라이언트에서 Ubuntu 24.04 VM 에 SSH 키 인증을 구성한다.
+# 01-ssh-setup.sh — macOS 클라이언트에서 Ubuntu 24.04 VM 에 SSH 키 인증을 구성한다.
 # plan.md 0~1 단계에 대응한다. 실행 위치: macOS (10.10.10.1)
 #
 # 신뢰 경계: 이 스크립트는 클라이언트에서만 실행된다. 서버로 전송되는 것은
@@ -20,7 +20,7 @@ ASSUME_YES=0
 
 usage() {
   cat <<'USAGE'
-사용법: ./ssh-setup.sh [옵션]
+사용법: ./01-ssh-setup.sh [옵션]
 
   --host <ip>           대상 서버 주소            (기본: 10.10.10.150)
   --user <name>         원격 계정                 (기본: groom)
@@ -42,6 +42,11 @@ else
   C_R=''; C_G=''; C_Y=''; C_B=''; C_0=''
 fi
 step() { printf '\n%s==> %s%s\n' "$C_B" "$*" "$C_0"; }
+# sshd 가 실제로 광고하는 인증 수단. 설정 파일이 아니라 데몬의 응답이 근거다.
+advertised_auths() {
+  ssh "${SSH_OPTS[@]}" -v -o BatchMode=yes -o PubkeyAuthentication=no "$TARGET" true 2>&1 \
+    | grep 'Authentications that can continue' | tail -1 || true
+}
 ok()   { printf '%s  [OK]%s %s\n' "$C_G" "$C_0" "$*"; }
 warn() { printf '%s  [WARN]%s %s\n' "$C_Y" "$C_0" "$*" >&2; }
 die()  { printf '%s  [FAIL]%s %s\n' "$C_R" "$C_0" "$*" >&2; exit 1; }
@@ -60,6 +65,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 TARGET="${USER_NAME}@${HOST}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SSH_OPTS=(-o ConnectTimeout=8)
 
 # ── 0. 사전 요건 ─────────────────────────────────────────────────────────────
@@ -145,8 +151,7 @@ sudo sshd -t && sudo systemctl reload ssh.service && echo "configuration OK"'
     || die "sshd 설정 적용 실패 — 비밀번호 인증은 그대로 유지된다."
 
   # 검증: 파일이 아니라 데몬이 광고하는 인증 수단으로 확인한다.
-  AUTHS="$(ssh "${SSH_OPTS[@]}" -v -o BatchMode=yes -o PubkeyAuthentication=no "$TARGET" true 2>&1 \
-           | grep 'Authentications that can continue' | tail -1 || true)"
+  AUTHS="$(advertised_auths)"
   printf '  %s\n' "${AUTHS:-<없음>}"
   if grep -q 'password' <<<"$AUTHS"; then
     die "password 가 목록에 남아 있다. reload 가 반영되지 않았다."
@@ -157,7 +162,14 @@ sudo sshd -t && sudo systemctl reload ssh.service && echo "configuration OK"'
     || die "키 로그인이 깨졌다. 게스트 콘솔에서 60-no-password.conf 를 제거한다."
   ok "키 로그인 정상"
 else
-  warn "비밀번호 인증은 활성 상태다. 차단하려면 --disable-password 로 재실행한다."
+  step "비밀번호 인증 상태 확인"
+  AUTHS="$(advertised_auths)"
+  printf '  %s\n' "${AUTHS:-<확인 불가>}"
+  if grep -q 'password' <<<"$AUTHS"; then
+    warn "비밀번호 인증이 활성 상태다. 차단하려면 --disable-password 로 재실행한다."
+  else
+    ok "비밀번호 인증은 이미 차단돼 있다"
+  fi
 fi
 
 # ── 다음 단계 안내 ───────────────────────────────────────────────────────────
@@ -165,8 +177,9 @@ step "완료 — 다음 단계"
 cat <<NEXT
   서버에서 Docker 를 설치한다:
 
-    scp "$(dirname "$0")/docker-install.sh" ${TARGET}:~/
-    ssh -t ${TARGET} 'bash ~/docker-install.sh'
+    scp ${SCRIPT_DIR}/02-install.sh ${SCRIPT_DIR}/03-compose.sh ${TARGET}:~/
+    ssh -t ${TARGET} 'bash ~/02-install.sh'
+    ssh -t ${TARGET} 'bash ~/03-compose.sh'   # Compose 가 필요한 경우
 
   ~/.ssh/config 별칭 등록(선택):
 

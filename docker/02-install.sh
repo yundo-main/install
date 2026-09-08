@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# docker-install.sh — Ubuntu 24.04 에 Docker 공식 저장소로 Docker CE 를 설치한다.
+# 02-install.sh — Ubuntu 24.04 에 Docker 공식 저장소로 Docker CE 를 설치한다.
 # plan.md 2~6 단계에 대응한다. 실행 위치: Ubuntu 24.04 VM (대상 호스트)
 #
 # 설계 원칙
@@ -28,7 +28,7 @@ VERIFY_ONLY=0
 
 usage() {
   cat <<'USAGE'
-사용법: bash docker-install.sh [옵션]
+사용법: bash 02-install.sh [옵션]
 
   --docker-group          호출 계정을 docker 그룹에 추가한다 (기본: 비활성)
                           ── docker 그룹은 root 등가 권한이다. 아래 경고 참조.
@@ -65,15 +65,28 @@ while [[ $# -gt 0 ]]; do
 done
 
 # ── 검증 루틴 (설치 후 및 --verify-only 에서 공용) ───────────────────────────
+# docker CLI 실행 접두사를 결정한다.
+# docker 그룹 멤버면 sudo 가 불필요하다. sudo 를 무조건 붙이면 NOPASSWD 가 아닌
+# 호스트에서 비밀번호 프롬프트 때문에 비대화형 검증이 막힌다.
+set_docker_cmd() {
+  if docker info > /dev/null 2>&1; then
+    DOCKER=(docker)
+  else
+    DOCKER=(sudo docker)
+  fi
+}
+
 verify_all() {
   local rc=0
+  set_docker_cmd
 
   step "검증 — 바이너리 버전"
   docker --version        || rc=1
   containerd --version    || rc=1
   runc --version | head -1 || rc=1
   docker buildx version   || rc=1
-  docker compose version  || rc=1
+  # compose 는 03-compose.sh 소관이다. 미설치는 실패로 보지 않는다.
+  docker compose version 2>/dev/null || warn "compose 미설치 — 필요하면 03-compose.sh 를 실행한다"
 
   step "검증 — systemd 유닛"
   local u
@@ -85,7 +98,7 @@ verify_all() {
   done
 
   step "검증 — 전 경로 (registry pull -> containerd -> runc)"
-  if sudo docker run --rm hello-world 2>&1 | grep -q "Hello from Docker!"; then
+  if "${DOCKER[@]}" run --rm hello-world 2>&1 | grep -q "Hello from Docker!"; then
     ok "hello-world 정상"
   else
     warn "hello-world 실패 — 레지스트리 도달성 또는 런타임을 확인한다"; rc=1
@@ -93,14 +106,14 @@ verify_all() {
 
   if [[ $SKIP_DAEMON_CONFIG -eq 0 ]]; then
     step "검증 — 데몬 설정 (실제 상태 기준)"
-    sudo docker info --format 'live-restore : {{.LiveRestoreEnabled}}
+    "${DOCKER[@]}" info --format 'live-restore : {{.LiveRestoreEnabled}}
 security     : {{.SecurityOptions}}' || rc=1
-    sudo docker network inspect bridge \
+    "${DOCKER[@]}" network inspect bridge \
       --format 'icc          : {{index .Options "com.docker.network.bridge.enable_icc"}}' || rc=1
-    sudo docker run -d --name logchk alpine sleep 10 > /dev/null
-    sudo docker inspect logchk --format 'log          : {{.HostConfig.LogConfig.Config}}' || rc=1
-    sudo docker rm -f logchk > /dev/null
-    sudo docker run --rm alpine grep NoNewPrivs /proc/self/status || rc=1
+    "${DOCKER[@]}" run -d --name logchk alpine sleep 10 > /dev/null
+    "${DOCKER[@]}" inspect logchk --format 'log          : {{.HostConfig.LogConfig.Config}}' || rc=1
+    "${DOCKER[@]}" rm -f logchk > /dev/null
+    "${DOCKER[@]}" run --rm alpine grep NoNewPrivs /proc/self/status || rc=1
   fi
 
   return $rc
@@ -111,7 +124,8 @@ step "0. 사전 요건"
 
 [[ "$(id -u)" -ne 0 ]] || die "root 로 직접 실행하지 않는다. sudo 권한을 가진 일반 계정으로 실행한다."
 command -v sudo > /dev/null || die "sudo 가 없다."
-sudo -v || die "sudo 권한 확인 실패."
+# 검증 전용 실행은 설치를 하지 않으므로 sudo 권한을 미리 요구하지 않는다.
+[[ $VERIFY_ONLY -eq 1 ]] || sudo -v || die "sudo 권한 확인 실패."
 
 . /etc/os-release
 [[ "${ID:-}" == "ubuntu" ]] || die "Ubuntu 전용 스크립트다 (감지: ${ID:-unknown})."
@@ -182,9 +196,9 @@ apt-cache policy docker-ce | head -5
 # ── 3. 패키지 설치 ───────────────────────────────────────────────────────────
 step "3. 패키지 설치"
 
+# Compose 플러그인은 03-compose.sh 소관이다. 여기서 설치하지 않는다.
 sudo apt-get install -y \
-  docker-ce docker-ce-cli containerd.io \
-  docker-buildx-plugin docker-compose-plugin
+  docker-ce docker-ce-cli containerd.io docker-buildx-plugin
 ok "설치 완료"
 
 # ── 6. 데몬 설정 (서비스 검증 전에 적용해 재시작을 1회로 줄인다) ─────────────
@@ -252,6 +266,7 @@ else
 fi
 
 step "설치 완료"
+printf '  Compose 가 필요하면 별도로 설치한다: bash 03-compose.sh\n'
 cat <<'RESIDUAL'
   잔여 위험 / 전제
     - icc=false 는 기본 bridge 네트워크에만 적용된다. 사용자 정의 네트워크의
