@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# 02-install.sh — Ubuntu 24.04 에 Docker 공식 저장소로 Docker CE 를 설치한다.
-# plan.md 2~6 단계에 대응한다. 실행 위치: Ubuntu 24.04 VM (대상 호스트)
+# 02-docker-ce.sh — Ubuntu 24.04 에 Docker 공식 저장소로 Docker CE 를 설치한다.
+# 근거·기대 출력·사용법은 02-docker-ce.md 에 있다. 실행 위치: Ubuntu 24.04 VM (대상 호스트)
 #
 # 설계 원칙
 #   - 신뢰 경로 우선: GPG 키는 지문을 대조한 뒤에만 keyrings 에 배치한다.
@@ -9,8 +9,8 @@
 #   - 검증은 설정 파일이 아니라 데몬·컨테이너의 실제 상태로 수행한다.
 #   - 멱등: 재실행해도 상태가 수렴한다.
 #
-# 역할: 실행 도구. 절차의 근거와 기대 출력은 plan.md, 사용법은 USAGE.md 에 있다.
-#       여기에 절차 설명을 복제하지 않는다. 코드가 plan.md 와 어긋나면 plan.md 가 기준이다.
+# 역할: 실행 도구. 절차의 근거·기대 출력·사용법은 02-docker-ce.md 에 있다.
+#       여기에 절차 설명을 복제하지 않는다. 코드가 02-docker-ce.md 와 어긋나면 문서가 기준이다.
 #       서버로 단독 scp 되므로 자기완결적이어야 한다 — 외부 라이브러리를 참조하지 않는다.
 #
 set -euo pipefail
@@ -28,7 +28,7 @@ VERIFY_ONLY=0
 
 usage() {
   cat <<'USAGE'
-사용법: bash 02-install.sh [옵션]
+사용법: bash 02-docker-ce.sh [옵션]
 
   --docker-group          호출 계정을 docker 그룹에 추가한다 (기본: 비활성)
                           ── docker 그룹은 root 등가 권한이다. 아래 경고 참조.

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #
-# 01-ssh-setup.sh — macOS 클라이언트에서 Ubuntu 24.04 VM 에 SSH 키 인증을 구성한다.
-# plan.md 0~1 단계에 대응한다. 실행 위치: macOS (10.10.10.1)
+# 01-ssh-client.sh — macOS 클라이언트에서 Ubuntu 24.04 VM 에 SSH 키 인증을 구성한다.
+# 근거·기대 출력·사용법은 01-ssh-client.md 에 있다. 실행 위치: macOS (10.10.10.1)
 #
 # 신뢰 경계: 이 스크립트는 클라이언트에서만 실행된다. 서버로 전송되는 것은
 #            공개키뿐이며, sshd 설정 변경은 SSH 세션 위에서 sudo 로 수행한다.
 #
-# 역할: 실행 도구. 절차의 근거와 기대 출력은 plan.md, 사용법은 USAGE.md 에 있다.
-#       여기에 절차 설명을 복제하지 않는다. 코드가 plan.md 와 어긋나면 plan.md 가 기준이다.
+# 역할: 실행 도구. 절차의 근거·기대 출력·사용법은 01-ssh-client.md 에 있다.
+#       여기에 절차 설명을 복제하지 않는다. 코드가 01-ssh-client.md 와 어긋나면 문서가 기준이다.
 #
 set -euo pipefail
 
@@ -20,7 +20,7 @@ ASSUME_YES=0
 
 usage() {
   cat <<'USAGE'
-사용법: ./01-ssh-setup.sh [옵션]
+사용법: ./01-ssh-client.sh [옵션]
 
   --host <ip>           대상 서버 주소            (기본: 10.10.10.150)
   --user <name>         원격 계정                 (기본: groom)
@@ -28,7 +28,7 @@ usage() {
   --expect-fpr <fpr>    호스트 키 지문 (SHA256:...) — 게스트 콘솔에서
                         `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`
                         으로 확인한 값. 생략 시 대화형 확인을 요구한다.
-  --disable-password    키 인증 검증 성공 후 비밀번호 인증을 차단한다 (1-3 단계)
+  --disable-password    키 인증 검증 성공 후 비밀번호 인증을 차단한다 (SSH-only 폴백; 콘솔 접근 가능하면 00-ssh-server.sh --password-auth 사용)
   --yes                 대화형 확인을 생략한다 (--expect-fpr 필요)
   -h, --help            도움말
 
@@ -177,8 +177,8 @@ step "완료 — 다음 단계"
 cat <<NEXT
   서버에서 Docker 를 설치한다:
 
-    scp ${SCRIPT_DIR}/02-install.sh ${SCRIPT_DIR}/03-compose.sh ${TARGET}:~/
-    ssh -t ${TARGET} 'bash ~/02-install.sh'
+    scp ${SCRIPT_DIR}/02-docker-ce.sh ${SCRIPT_DIR}/03-compose.sh ${TARGET}:~/
+    ssh -t ${TARGET} 'bash ~/02-docker-ce.sh'
     ssh -t ${TARGET} 'bash ~/03-compose.sh'   # Compose 가 필요한 경우
 
   ~/.ssh/config 별칭 등록(선택):

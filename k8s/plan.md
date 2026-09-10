@@ -9,7 +9,8 @@ ubuntu 24.04 kubernetes 설치
 ## environment
 ip address : 10.10.10.150
 ssh : groom (키 인증, 비밀번호 인증 차단됨)
-- SSH 접속 구성은 [../docker/plan.md](../docker/plan.md) 참조
+- SSH 서버 구성은 [../docker/00-ssh-server.md](../docker/00-ssh-server.md),
+  클라이언트 접속은 [../docker/01-ssh-client.md](../docker/01-ssh-client.md) 참조
 - 연결 실패 시 [../network-troubleshooting.md](../network-troubleshooting.md)
 
 ## 현재 상태 (2026-09-02 실측)
