@@ -43,7 +43,7 @@ bash 00-ssh-server.sh --authorized-key-file ~/lab_groom.pub --password-auth lan
 
 ```bash
 # main 이 아니라 커밋 SHA 로 고정한다 — 받는 내용이 확정되고 raw CDN 캐시 지연도 없다
-REF=46e8c040acadf70a6097fcceb8272236ee0a2db7
+REF=1963e4b8f440c1d42b24ff6d4c807db9fbfb8f94   # 이 값 대신 git log -1 --format=%H 의 최신 SHA 를 쓴다
 BASE="https://raw.githubusercontent.com/yundo-main/install/${REF}/docker"
 
 wget -q "${BASE}/00-ssh-server.sh" -O 00-ssh-server.sh     # TLS 검증 기본 — --no-check-certificate 금지
