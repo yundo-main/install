@@ -81,10 +81,13 @@ verify_all() {
   set_docker_cmd
 
   step "검증 — 바이너리 버전"
-  docker --version        || rc=1
-  containerd --version    || rc=1
-  runc --version | head -1 || rc=1
-  docker buildx version   || rc=1
+  # cmd | head/grep 는 head 가 파이프를 먼저 닫아 cmd 를 SIGPIPE 로 죽일 수 있고,
+  # pipefail 이 그 141 을 파이프라인 실패로 만들어 rc 가 잘못 올라간다.
+  # sed -n 1p 는 입력을 끝까지 읽으므로 그 경합이 없다.
+  docker --version                     || rc=1
+  containerd --version                 || rc=1
+  runc --version 2>/dev/null | sed -n 1p || rc=1
+  docker buildx version                || rc=1
   # compose 는 03-compose.sh 소관이다. 미설치는 실패로 보지 않는다.
   docker compose version 2>/dev/null || warn "compose 미설치 — 필요하면 03-compose.sh 를 실행한다"
 
@@ -98,7 +101,11 @@ verify_all() {
   done
 
   step "검증 — 전 경로 (registry pull -> containerd -> runc)"
-  if "${DOCKER[@]}" run --rm hello-world 2>&1 | grep -q "Hello from Docker!"; then
+  # grep -q 가 매치 즉시 파이프를 닫으면 docker 가 SIGPIPE 로 죽는다. 출력을 먼저
+  # 받아 두고 검사한다 — 경합 없음.
+  local hw_out
+  hw_out="$("${DOCKER[@]}" run --rm hello-world 2>&1 || true)"
+  if grep -q "Hello from Docker!" <<<"$hw_out"; then
     ok "hello-world 정상"
   else
     warn "hello-world 실패 — 레지스트리 도달성 또는 런타임을 확인한다"; rc=1
@@ -191,7 +198,9 @@ fi
 rm -f "$UPDATE_LOG"
 ok "GPG 오류 없음"
 
-apt-cache policy docker-ce | head -5
+# head 가 파이프를 먼저 닫으면 apt-cache 가 SIGPIPE 로 죽고, pipefail+set -e 가
+# 스크립트를 여기서 중단시킨다. 정보 출력이므로 실패를 무시한다.
+apt-cache policy docker-ce 2>/dev/null | head -n 5 || true
 
 # ── 3. 패키지 설치 ───────────────────────────────────────────────────────────
 step "3. 패키지 설치"
@@ -254,7 +263,7 @@ verify_all || die "검증 실패 — 위 항목을 확인한다."
 step "5. 권한 모델 — docker 그룹"
 
 if [[ $ADD_DOCKER_GROUP -eq 1 ]]; then
-  if id -nG "$USER" | tr ' ' '\n' | grep -qx docker; then
+  if [[ " $(id -nG "$USER") " == *" docker "* ]]; then
     ok "${USER} 는 이미 docker 그룹 멤버다"
   else
     sudo usermod -aG docker "$USER"

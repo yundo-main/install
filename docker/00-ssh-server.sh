@@ -131,7 +131,11 @@ verify_all() {
     "$(systemctl is-active  ssh.socket 2>/dev/null || echo n/a)"
   [[ "$(systemctl is-active ssh.service 2>/dev/null)" == "active" ]] || rc=1
   [[ "$(systemctl is-active ssh.socket  2>/dev/null)" == "active" ]] && { warn "ssh.socket 이 아직 활성 — 소켓 활성화가 남아 있다"; rc=1; }
-  if sudo ss -tlnp 2>/dev/null | grep -qE '(:|\.)22 '; then
+  # cmd | grep -q 는 grep 이 매치 즉시 파이프를 닫아 cmd 를 SIGPIPE 로 죽이고,
+  # pipefail 이 그 141 을 실패로 만들어 판정이 뒤집힌다. 출력을 먼저 받아 검사한다.
+  local ss_out ufw_out
+  ss_out="$(sudo ss -tlnp 2>/dev/null || true)"
+  if grep -qE '(:|\.)22 ' <<<"$ss_out"; then
     ok "22/tcp LISTEN"
   else
     warn "22/tcp LISTEN 안 됨"; rc=1
@@ -139,9 +143,10 @@ verify_all() {
 
   step "검증 — 방화벽"
   if [[ "$FIREWALL" == "ufw" ]]; then
-    if sudo ufw status verbose 2>/dev/null | grep -q "Status: active"; then
+    ufw_out="$(sudo ufw status verbose 2>/dev/null || true)"
+    if grep -q "Status: active" <<<"$ufw_out"; then
       ok "ufw active"
-      sudo ufw status verbose 2>/dev/null | grep -E "^(Default:|To|22/tcp|.* 22 )" | sed 's/^/  /' || true
+      grep -E "^(Default:|To|22/tcp|.* 22 )" <<<"$ufw_out" | sed 's/^/  /' || true
     else
       warn "ufw 비활성"; rc=1
     fi
@@ -208,7 +213,11 @@ fi
 sudo systemctl unmask ssh.service > /dev/null 2>&1 || true
 sudo systemctl enable --now ssh.service > /dev/null 2>&1 || die "ssh.service 기동 실패"
 # 소켓 해제 후 서비스가 즉시 포트를 잡았는지 확인한다.
-sudo ss -tlnp 2>/dev/null | grep -qE '(:|\.)22 ' || { sudo systemctl restart ssh.service; sleep 1; }
+# 출력을 먼저 받아 검사한다 — cmd|grep -q 는 grep 이 파이프를 먼저 닫아 ss 를
+# SIGPIPE 로 죽이고 pipefail 이 그 141 을 실패로 만들어 restart 가 헛돈다.
+if ! grep -qE '(:|\.)22 ' <<<"$(sudo ss -tlnp 2>/dev/null || true)"; then
+  sudo systemctl restart ssh.service; sleep 1
+fi
 ok "ssh.service enabled + active"
 
 # ── 2. 공개키 배치 (선택) ───────────────────────────────────────────────────
@@ -264,7 +273,8 @@ if [[ "$FIREWALL" == "ufw" ]]; then
   sudo ufw default allow outgoing > /dev/null
   sudo ufw logging low            > /dev/null   # 차단 로그 — 감사 흔적
 
-  if sudo ufw status 2>/dev/null | grep -q "Status: active"; then
+  # sed -n 1p 는 입력을 끝까지 읽어 SIGPIPE 경합이 없다 (grep -q 와 달리).
+  if [[ "$(sudo ufw status 2>/dev/null | sed -n '1p')" == *"Status: active"* ]]; then
     sudo ufw reload > /dev/null
     ok "ufw 활성 — reload"
   else

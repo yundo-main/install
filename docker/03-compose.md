@@ -15,7 +15,18 @@
 ## 실행
 
 ```bash
+scp 03-compose.sh groom@10.10.10.150:~/
 ssh -t groom@10.10.10.150 'bash ~/03-compose.sh'
+```
+
+또는 노드에서 직접 받는다 ([02-docker-ce.md](02-docker-ce.md) 「`wget` 로 노드에서
+직접 받기」와 동일 절차 — 커밋 SHA 고정 → `sha256sum` 대조 → 육안 검토 → 실행,
+`\| bash` 금지):
+
+```bash
+REF=46e8c040acadf70a6097fcceb8272236ee0a2db7
+wget -q "https://raw.githubusercontent.com/yundo-main/install/${REF}/docker/03-compose.sh" -O 03-compose.sh
+sha256sum 03-compose.sh && less 03-compose.sh && bash 03-compose.sh
 ```
 
 Compose V2 는 독립 바이너리가 아니라 **Docker CLI 플러그인**이므로 GitHub 릴리스

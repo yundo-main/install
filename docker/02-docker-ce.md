@@ -19,12 +19,37 @@
 
 ## 실행
 
+이 단계에서는 SSH 가 이미 동작하므로 `scp` 로 옮긴다.
+
 ```bash
 scp 02-docker-ce.sh groom@10.10.10.150:~/
 ssh -t groom@10.10.10.150 'bash ~/02-docker-ce.sh'
 ```
 
 `sudo` 비밀번호 프롬프트 때문에 `-t` 가 필요하다.
+
+### `wget` 로 노드에서 직접 받기
+
+Mac 을 거치지 않고 노드에서 받아도 된다. `02-docker-ce.sh` 는 자기완결이라 이
+파일 하나면 실행된다. **`\| bash` 로 잇지 않는다** — 대상은 root 등가 호스트다.
+
+```bash
+# main 이 아니라 커밋 SHA 로 고정한다 — 받는 내용이 확정되고 raw CDN 캐시 지연도 없다
+REF=46e8c040acadf70a6097fcceb8272236ee0a2db7
+BASE="https://raw.githubusercontent.com/yundo-main/install/${REF}/docker"
+
+wget -q "${BASE}/02-docker-ce.sh" -O 02-docker-ce.sh    # TLS 검증 기본 — --no-check-certificate 금지
+
+sha256sum 02-docker-ce.sh                                # 별도 채널(로컬 clone)의 기대값과 대조
+#   기대값:  git -C <clone> show ${REF}:docker/02-docker-ce.sh | sha256sum
+
+less 02-docker-ce.sh                                     # 무엇을 sudo 로 실행하는지 직접 본다
+bash 02-docker-ce.sh
+```
+
+private 리포면 `gh api ...` 또는 `wget --header="Authorization: Bearer <token>"`.
+토큰은 명령행 인자로 넘기지 않는다 (`/proc/<pid>/cmdline`·history 노출). 다중
+파일이 필요하면 커밋 SHA 로 체크아웃한 `git clone` 이 낫다.
 
 ### 옵션
 

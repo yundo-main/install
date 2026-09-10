@@ -27,8 +27,37 @@ bash 00-ssh-server.sh --authorized-key-file ~/lab_groom.pub
 bash 00-ssh-server.sh --authorized-key-file ~/lab_groom.pub --password-auth lan
 ```
 
-공개키 전달은 SCP 가 아니다 (그 경로가 아직 없다). VMware 공유 폴더·클립보드
-붙여넣기·USB 중 하나로 `.pub` 파일을 노드에 둔다.
+### 스크립트·공개키 전달
+
+이 단계 이전에는 SSH·`scp` 경로가 없다. 스크립트와 `.pub` 파일을 노드에 올리는
+방법:
+
+| 방법 | 비고 |
+|---|---|
+| `git clone` + 커밋 SHA 체크아웃 | 무결성이 커밋 해시로 보장된다. 여러 파일을 한 번에 가져온다 — 전량이 필요하면 이 방법 |
+| `wget` raw URL (아래) | 파일 하나만 필요할 때. `00-ssh-server.sh` 는 자기완결이라 이 파일만으로 실행된다 |
+| VMware 공유 폴더 / 클립보드 붙여넣기 / USB | 네트워크가 없는 노드 |
+
+**`wget` 은 `\| bash` 로 잇지 않는다.** 대상은 root 등가 권한을 얻는 호스트다.
+다운로드 → 무결성 대조 → 육안 검토 → 실행으로 분리한다.
+
+```bash
+# main 이 아니라 커밋 SHA 로 고정한다 — 받는 내용이 확정되고 raw CDN 캐시 지연도 없다
+REF=46e8c040acadf70a6097fcceb8272236ee0a2db7
+BASE="https://raw.githubusercontent.com/yundo-main/install/${REF}/docker"
+
+wget -q "${BASE}/00-ssh-server.sh" -O 00-ssh-server.sh     # TLS 검증 기본 — --no-check-certificate 금지
+
+sha256sum 00-ssh-server.sh                                  # 별도 채널(로컬 clone)의 기대값과 대조
+#   기대값:  git -C <clone> show ${REF}:docker/00-ssh-server.sh | sha256sum
+
+less 00-ssh-server.sh                                       # 무엇을 sudo 로 실행하는지 직접 본다
+bash 00-ssh-server.sh --authorized-key-file ~/lab_groom.pub
+```
+
+private 리포면 `gh api ...` 또는 `wget --header="Authorization: Bearer <token>"` 를
+쓴다. 토큰은 명령행 인자로 넘기지 않는다 (`/proc/<pid>/cmdline`·history 노출) —
+파일·환경변수로 다룬다.
 
 ### 옵션
 
@@ -149,6 +178,10 @@ Status: active   Default: deny (incoming), allow (outgoing)
 
 ## 잔여 위험 / 전제
 
+- **`wget` 로 스크립트를 받는 경로는 공급망 주입 지점이다.** 네트워크로 실행
+  아티팩트를 root 등가 호스트에 들인다. `main` 이 아니라 커밋 SHA 고정 + 별도
+  채널 해시 대조 + 실행 전 육안 검토가 완화책이다. 리포가 public 이면 raw URL 은
+  누구나 읽는다 — 리포에 시크릿을 두지 않는 전제가 유지돼야 한다.
 - `--password-auth lan|on` 은 비밀번호 무차별 대입 표면을 연다. OpenSSH 9.6 에는
   `PerSourcePenalties`(9.8+) 가 없다. 자동 소스 차단이 필요하면 `fail2ban` 을 별도
   도입한다 — 운영 부담 발생.
