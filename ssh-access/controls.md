@@ -37,3 +37,4 @@
 | 개인키를 git 에 두는 경우의 노출 범위 | [01-ssh-keys.md](01-ssh-keys.md) |
 | `authorized_keys` 옵션 충돌(무제한 키 잔존) 미자동 정리 | [01-ssh-keys.md](01-ssh-keys.md) |
 | 복제 VM 호스트 키 승계 | [../docker/02-swarm-cluster.md](../docker/02-swarm-cluster.md) |
+| `issue-key.sh` 는 신뢰를 생성하지 않고 증폭한다 — 부트스트랩 자격증명이 침해돼 있으면 신규 발급 키도 그 침해를 물려받는다 | [01-ssh-keys.md](01-ssh-keys.md) 「AWS 스타일 키 발급」 |
