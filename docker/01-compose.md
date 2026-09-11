@@ -14,16 +14,20 @@ compose 파일 작성 기준은 [compose-authoring.md](compose-authoring.md).
 **전제:** [00-docker-ce.md](00-docker-ce.md) 완료 — Docker CE + 서명된 저장소 설정
 (`signed-by=`). 스크립트가 이를 먼저 확인하고 없으면 중단한다.
 
+**실행 위치:** 스크립트는 노드에서 돈다. 전달 방식에 따라 타이핑 위치가 다르다 —
+`scp` 방식은 Mac, `wget` 방식은 노드 프롬프트. 각 블록에 표시했다.
+
 ---
 
 ## 실행
 
+**Mac 에서** (파일 전송 + 원격 실행 트리거 — 실제 스크립트는 노드에서 돈다):
 ```bash
 scp 01-compose.sh groom@10.10.10.150:~/
 ssh -t groom@10.10.10.150 'bash ~/01-compose.sh'
 ```
 
-또는 노드에서 직접 받는다 ([00-docker-ce.md](00-docker-ce.md) 「`wget` 로 노드에서
+또는 **노드 프롬프트에 직접** ([00-docker-ce.md](00-docker-ce.md) 「`wget` 로 노드에서
 직접 받기」와 동일 절차 — 커밋 SHA 고정 → `sha256sum` 대조 → 육안 검토 → 실행,
 `\| bash` 금지):
 
@@ -35,6 +39,7 @@ sha256sum 01-compose.sh && less 01-compose.sh && bash 01-compose.sh
 
 Compose V2 는 독립 바이너리가 아니라 **Docker CLI 플러그인**이므로 GitHub 릴리스
 바이너리를 받지 않고 서명된 저장소의 `docker-compose-plugin` 패키지로 설치한다.
+스크립트가 내부적으로 하는 일 (**노드에서**, 수동으로 하려면):
 
 ```bash
 sudo apt-get update && sudo apt-get install -y docker-compose-plugin
@@ -51,6 +56,7 @@ sudo apt-get update && sudo apt-get install -y docker-compose-plugin
 
 ## 검증
 
+**노드에서:**
 ```bash
 docker compose version
 dpkg -l docker-compose-plugin | tail -1
@@ -65,6 +71,7 @@ ii  docker-compose-plugin 5.5.0-1~ubuntu.24.04~noble arm64  Docker Compose (V2) 
 스크립트는 설치 후 바이너리가 **패키지 소유**인지(`dpkg -S`)까지 검증한다. 수동으로
 내려받은 바이너리는 여기서 잡히지 않는다 — 갱신·제거 경로가 없다는 뜻이다.
 
+**Mac 에서:**
 ```bash
 ssh groom@10.10.10.150 'bash ~/01-compose.sh --verify-only'
 ```

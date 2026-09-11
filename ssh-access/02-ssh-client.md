@@ -17,6 +17,9 @@ macOS 클라이언트(`10.10.10.1`)에서 실행한다. 호스트 키 지문을 
 [00-ssh-server.md](00-ssh-server.md) 가 노드에서 담당한다. 이 문서는 **클라이언트가
 그 서버에 올바르게 접속되는지**까지다.
 
+**실행 위치: 기본은 Mac.** 예외 한 곳(호스트 키 지문 확인, 「실행」 절 첫 블록)만
+노드 콘솔에서 한다 — 그 지점에 별도로 표시한다.
+
 ---
 
 ## 0. 사전 요건 — macOS 로컬 네트워크 권한
@@ -28,6 +31,7 @@ macOS 는 로컬 네트워크 접근을 **앱 단위**로 통제한다 (Sequoia 
 **시스템 설정 → 개인정보 보호 및 보안 → 로컬 네트워크** 에서 해당 앱
 (Terminal.app / iTerm / Termius / VS Code 등)을 허용하고 **완전 종료 후 재실행**.
 
+**Mac(그 앱)에서:**
 ```bash
 ping -c 2 10.10.10.150
 ```
@@ -37,7 +41,7 @@ ping -c 2 10.10.10.150
 | `Request timeout` | 패킷은 나감 — 경로 또는 수신측. Electron 앱(Termius)은 차단 시 즉시 오류 대신 timeout 으로 나타나기도 한다 |
 | `64 bytes from ...` | 정상 |
 
-토글이 켜져 있는데도 안 되면:
+토글이 켜져 있는데도 안 되면 **Mac 에서:**
 ```bash
 tccutil reset LocalNetworkAuthorization <bundle-id>   # 예: com.googlecode.iterm2 / com.termius-dmg.mac
 ```
@@ -47,8 +51,8 @@ tccutil reset LocalNetworkAuthorization <bundle-id>   # 예: com.googlecode.iter
 
 ## 실행
 
-게스트 콘솔에서 호스트 키 지문을 먼저 확인한다 ([00-ssh-server.md](00-ssh-server.md)
-검증 절 출력).
+**노드 콘솔에서** 호스트 키 지문을 먼저 확인한다 ([00-ssh-server.md](00-ssh-server.md)
+검증 절 출력과 같은 값이어야 한다):
 
 ```bash
 ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
@@ -57,7 +61,7 @@ ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
 256 SHA256:HzsGa1MYvEl4YPh4sZ5kZGQ4mBcv6zVGmKYD8LqnS5A 10.10.10.150 (ED25519)
 ```
 
-Mac 에서 그 값을 넘겨 실행한다.
+**Mac 에서** 그 값을 넘겨 실행한다 (여기서부터 이 문서가 끝날 때까지 전부 Mac):
 
 ```bash
 ./02-ssh-client.sh --expect-fpr SHA256:HzsGa1MYvEl4YPh4sZ5kZGQ4mBcv6zVGmKYD8LqnS5A

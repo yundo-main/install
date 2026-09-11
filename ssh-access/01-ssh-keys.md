@@ -14,14 +14,20 @@
 고정되지만 키는 회전·추가·폐기가 그보다 잦다 — 방화벽·소켓 설정을 건드리지 않고
 키만 갱신할 수 있어야 한다.
 
+**실행 위치가 이 문서 안에서 바뀐다** — 키 생성(0단계)은 Mac, 등록(스크립트 실행)
+은 노드, 최종 확인 일부는 다시 Mac. 각 절 앞에 표시한다.
+
 ---
 
 ## 0. 키페어 준비 (이 스크립트 밖)
 
+**Mac(클라이언트)에서.** 개인키는 접속을 거는 쪽 — 즉 Mac — 에 있어야 한다.
+노드에는 절대 옮기지 않는다. 노드로 가는 것은 `.pub`(공개키) 뿐이다.
+
 기존 키를 재사용하거나, 이 노드 묶음 전용으로 새로 만든다.
 
 ```bash
-# 전용 키 — 무암호(자동화용). 비밀번호 없는 개인키이므로 취급에 준하는 통제가 필요하다.
+# Mac 에서 — 전용 키, 무암호(자동화용). 비밀번호 없는 개인키이므로 취급에 준하는 통제가 필요하다.
 ssh-keygen -t ed25519 -f ~/.ssh/lab_groom -C "lab-groom-$(date +%Y%m)" -N ''
 ```
 
@@ -38,15 +44,17 @@ ssh-keygen -t ed25519 -f ~/.ssh/lab_groom -C "lab-groom-$(date +%Y%m)" -N ''
 
 ## 실행
 
+`.pub` 파일을 Mac 에서 노드로 옮긴다 — 방법은 [00-ssh-server.md](00-ssh-server.md)
+「스크립트 전달」과 동일하다 (`git clone`, `wget`, 공유 폴더, 콘솔 붙여넣기).
+**개인키는 옮기지 않는다.**
+
+**노드에서:**
 ```bash
 bash 01-ssh-keys.sh --authorized-key-file ~/lab_groom.pub
 
 # LAN 격리 대역 밖에서는 이 키를 무효화 (권장 — 특히 개인키를 git 에 둔 경우)
 bash 01-ssh-keys.sh --authorized-key-file ~/lab_groom.pub --restrict-cidr 10.10.10.0/24
 ```
-
-`.pub` 파일 전달 방법은 [00-ssh-server.md](00-ssh-server.md) 「스크립트 전달」과
-동일하다 (`git clone`, `wget`, 공유 폴더, 콘솔 붙여넣기).
 
 ### 옵션
 
@@ -79,11 +87,12 @@ bash 01-ssh-keys.sh --authorized-key-file ~/lab_groom.pub --restrict-cidr 10.10.
 
 ## 검증
 
+**노드에서:**
 ```bash
 bash 01-ssh-keys.sh --verify-only
 ```
 ```
-검증 — /Users/.../.ssh 권한
+검증 — /home/groom/.ssh 권한
   700 /home/groom/.ssh
 검증 — authorized_keys
   권한: 600 (600 이어야 한다)
@@ -91,7 +100,7 @@ bash 01-ssh-keys.sh --verify-only
     ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...
 ```
 
-클라이언트에서 최종 확인:
+**Mac(클라이언트)에서** 최종 확인:
 ```bash
 ssh -o BatchMode=yes <user>@<VM IP> true && echo OK
 ```

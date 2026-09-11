@@ -17,6 +17,7 @@ Docker CE(engine·cli·containerd·buildx)를 설치한 뒤 `daemon.json`(로그
 
 | 항목 | 값 |
 |---|---|
+| **실행 위치** | **노드에서 실행됨.** 아래 두 전달 방법 중, `scp` 방식은 Mac 에서 타이핑해 원격 실행을 트리거하고, `wget` 방식은 노드 프롬프트에 직접 타이핑한다 |
 | 결과 | Docker 29.7.2 / containerd v2.3.4 / runc 1.4.3 (compose 는 [01-compose.md](01-compose.md)) |
 | GPG 키 지문 (대조 상수) | `9DC858229FC7DD38854AE2D88D81803C0EBFCD88` (2017-02-22, rsa4096) |
 | keyring | `/etc/apt/keyrings/docker.asc` |
@@ -29,6 +30,7 @@ Docker CE(engine·cli·containerd·buildx)를 설치한 뒤 `daemon.json`(로그
 
 이 단계에서는 SSH 가 이미 동작하므로 `scp` 로 옮긴다.
 
+**Mac 에서** (파일 전송 + 원격 실행 트리거 — 실제 스크립트는 노드에서 돈다):
 ```bash
 scp 00-docker-ce.sh groom@10.10.10.150:~/
 ssh -t groom@10.10.10.150 'bash ~/00-docker-ce.sh'
@@ -38,9 +40,11 @@ ssh -t groom@10.10.10.150 'bash ~/00-docker-ce.sh'
 
 ### `wget` 로 노드에서 직접 받기
 
-Mac 을 거치지 않고 노드에서 받아도 된다. `00-docker-ce.sh` 는 자기완결이라 이
-파일 하나면 실행된다. **`\| bash` 로 잇지 않는다** — 대상은 root 등가 호스트다.
+Mac 을 거치지 않고 **노드 프롬프트에 직접 타이핑**해도 된다 (예: 이미 SSH 로
+접속한 세션, 또는 게스트 콘솔). `00-docker-ce.sh` 는 자기완결이라 이 파일 하나면
+실행된다. **`\| bash` 로 잇지 않는다** — 대상은 root 등가 호스트다.
 
+**노드에서:**
 ```bash
 # main 이 아니라 커밋 SHA 로 고정한다 — 받는 내용이 확정되고 raw CDN 캐시 지연도 없다
 REF=1963e4b8f440c1d42b24ff6d4c807db9fbfb8f94   # 이 값 대신 git log -1 --format=%H 의 최신 SHA 를 쓴다
@@ -194,7 +198,7 @@ icc          : false
 NoNewPrivs:	1
 ```
 
-재확인만 필요하면:
+재확인만 필요하면 **Mac 에서:**
 ```bash
 ssh groom@10.10.10.150 'bash ~/00-docker-ce.sh --verify-only'
 ```
