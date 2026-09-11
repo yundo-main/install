@@ -1,16 +1,18 @@
-# Docker Swarm 클러스터 구성
+# 02 · Docker Swarm 클러스터 구성
 
 **요약.** manager 1 + worker 2 를 Swarm 으로 묶는 수동 절차. 복제 노드 신원 분리
 → `live-restore` 제거 → `docker swarm init` → 워커 토큰 scp 전달·가입 → 토큰 회전.
-스크립트 없음, 전제는 전 노드 00~03 완료.
+스크립트 없음, 전제는 SSH 접속 + Docker CE·데몬 설정 완료.
 
-> **역할: 단계 문서 (04).** 근거·수동 절차·기대 출력·잔여 위험을 한곳에 둔다.
-> 단일 노드 구성은 [00-ssh-server.md](00-ssh-server.md) ~ [03-compose.md](03-compose.md).
+> **역할: 단계 문서 (02).** 근거·수동 절차·기대 출력·잔여 위험을 한곳에 둔다.
+> SSH 접속은 [../ssh-access/](../ssh-access/), Docker CE·데몬 설정은
+> [00-docker-ce.md](00-docker-ce.md), Compose 는 [01-compose.md](01-compose.md).
 > 이 절차는 스크립트화하지 않았다 — 이유는 [README.md](README.md) 참조.
 
 manager 1 + worker 2 구성. `10.10.10.150` / `.151` / `.152`.
 
-전제: 전 노드에 00~03 단계 완료 (SSH 접속, Docker CE, 데몬 설정).
+전제: 전 노드에 SSH 접속([../ssh-access/](../ssh-access/)) + Docker CE·데몬 설정
+([00-docker-ce.md](00-docker-ce.md)) 완료.
 
 | 절 | 내용 |
 |---|---|

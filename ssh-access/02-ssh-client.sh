@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 #
-# 01-ssh-client.sh — macOS 클라이언트에서 Ubuntu 24.04 VM 에 SSH 키 인증을 구성한다.
-# 근거·기대 출력·사용법은 01-ssh-client.md 에 있다. 실행 위치: macOS (10.10.10.1)
+# 02-ssh-client.sh — macOS 클라이언트에서 Ubuntu 24.04 VM 접속을 구성·검증한다.
+# 근거·기대 출력·사용법은 02-ssh-client.md 에 있다. 실행 위치: macOS (10.10.10.1)
 #
 # 신뢰 경계: 이 스크립트는 클라이언트에서만 실행된다. 서버로 전송되는 것은
 #            공개키뿐이며, sshd 설정 변경은 SSH 세션 위에서 sudo 로 수행한다.
+#            authorized_keys 배치는 01-ssh-keys.sh(노드 로컬)가 우선 경로다 —
+#            여기의 ssh-copy-id 는 SSH·비밀번호가 이미 되는 경우의 대안이다.
 #
-# 역할: 실행 도구. 절차의 근거·기대 출력·사용법은 01-ssh-client.md 에 있다.
-#       여기에 절차 설명을 복제하지 않는다. 코드가 01-ssh-client.md 와 어긋나면 문서가 기준이다.
+# 역할: 실행 도구. 절차의 근거·기대 출력·사용법은 02-ssh-client.md 에 있다.
+#       여기에 절차 설명을 복제하지 않는다. 코드가 02-ssh-client.md 와 어긋나면 문서가 기준이다.
 #
 set -euo pipefail
 
@@ -20,7 +22,7 @@ ASSUME_YES=0
 
 usage() {
   cat <<'USAGE'
-사용법: ./01-ssh-client.sh [옵션]
+사용법: ./02-ssh-client.sh [옵션]
 
   --host <ip>           대상 서버 주소            (기본: 10.10.10.150)
   --user <name>         원격 계정                 (기본: groom)
@@ -177,9 +179,9 @@ step "완료 — 다음 단계"
 cat <<NEXT
   서버에서 Docker 를 설치한다:
 
-    scp ${SCRIPT_DIR}/02-docker-ce.sh ${SCRIPT_DIR}/03-compose.sh ${TARGET}:~/
-    ssh -t ${TARGET} 'bash ~/02-docker-ce.sh'
-    ssh -t ${TARGET} 'bash ~/03-compose.sh'   # Compose 가 필요한 경우
+    scp ${SCRIPT_DIR}/../docker/00-docker-ce.sh ${SCRIPT_DIR}/../docker/01-compose.sh ${TARGET}:~/
+    ssh -t ${TARGET} 'bash ~/00-docker-ce.sh'
+    ssh -t ${TARGET} 'bash ~/01-compose.sh'   # Compose 가 필요한 경우
 
   ~/.ssh/config 별칭 등록(선택):
 

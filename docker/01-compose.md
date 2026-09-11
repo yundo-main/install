@@ -1,17 +1,17 @@
-# 03 · Compose V2 플러그인
+# 01 · Compose V2 플러그인
 
 **요약.** 필요한 노드에서 실행해 서명된 Docker 저장소의 `docker-compose-plugin`
 패키지로 Compose V2 를 설치한다. GitHub 릴리스 바이너리·레거시 V1 은 배제.
 compose 파일 작성 기준은 [compose-authoring.md](compose-authoring.md).
 
 > **역할: 단계 문서.** 근거·기대 출력·옵션·검증을 한곳에 둔다.
-> 실행 도구는 [`03-compose.sh`](03-compose.sh). compose 파일 **저작 표준**은
+> 실행 도구는 [`01-compose.sh`](01-compose.sh). compose 파일 **저작 표준**은
 > 별도 문서 [compose-authoring.md](compose-authoring.md).
 
 필요한 노드에서만 실행한다. Docker CE 만 필요한 노드에 Compose 를 강제하지 않으며,
-클러스터에서는 `docker service` 를 쓴다 ([04-swarm-cluster.md](04-swarm-cluster.md)).
+클러스터에서는 `docker service` 를 쓴다 ([02-swarm-cluster.md](02-swarm-cluster.md)).
 
-**전제:** [02-docker-ce.md](02-docker-ce.md) 완료 — Docker CE + 서명된 저장소 설정
+**전제:** [00-docker-ce.md](00-docker-ce.md) 완료 — Docker CE + 서명된 저장소 설정
 (`signed-by=`). 스크립트가 이를 먼저 확인하고 없으면 중단한다.
 
 ---
@@ -19,18 +19,18 @@ compose 파일 작성 기준은 [compose-authoring.md](compose-authoring.md).
 ## 실행
 
 ```bash
-scp 03-compose.sh groom@10.10.10.150:~/
-ssh -t groom@10.10.10.150 'bash ~/03-compose.sh'
+scp 01-compose.sh groom@10.10.10.150:~/
+ssh -t groom@10.10.10.150 'bash ~/01-compose.sh'
 ```
 
-또는 노드에서 직접 받는다 ([02-docker-ce.md](02-docker-ce.md) 「`wget` 로 노드에서
+또는 노드에서 직접 받는다 ([00-docker-ce.md](00-docker-ce.md) 「`wget` 로 노드에서
 직접 받기」와 동일 절차 — 커밋 SHA 고정 → `sha256sum` 대조 → 육안 검토 → 실행,
 `\| bash` 금지):
 
 ```bash
 REF=1963e4b8f440c1d42b24ff6d4c807db9fbfb8f94   # 이 값 대신 git log -1 --format=%H 의 최신 SHA 를 쓴다
-wget -q "https://raw.githubusercontent.com/yundo-main/install/${REF}/docker/03-compose.sh" -O 03-compose.sh
-sha256sum 03-compose.sh && less 03-compose.sh && bash 03-compose.sh
+wget -q "https://raw.githubusercontent.com/yundo-main/install/${REF}/docker/01-compose.sh" -O 01-compose.sh
+sha256sum 01-compose.sh && less 01-compose.sh && bash 01-compose.sh
 ```
 
 Compose V2 는 독립 바이너리가 아니라 **Docker CLI 플러그인**이므로 GitHub 릴리스
@@ -66,7 +66,7 @@ ii  docker-compose-plugin 5.5.0-1~ubuntu.24.04~noble arm64  Docker Compose (V2) 
 내려받은 바이너리는 여기서 잡히지 않는다 — 갱신·제거 경로가 없다는 뜻이다.
 
 ```bash
-ssh groom@10.10.10.150 'bash ~/03-compose.sh --verify-only'
+ssh groom@10.10.10.150 'bash ~/01-compose.sh --verify-only'
 ```
 
 ---
@@ -75,7 +75,7 @@ ssh groom@10.10.10.150 'bash ~/03-compose.sh --verify-only'
 
 - **GitHub 릴리스 바이너리** (`curl -L .../docker-compose -o /usr/local/bin/...`):
   APT 서명 검증을 우회하고 패키지 관리자가 추적하지 못한다. 갱신·제거·무결성
-  확인 경로가 사라진다. [02-docker-ce.md](02-docker-ce.md) 2-2 의 지문 대조가 무효화된다.
+  확인 경로가 사라진다. [00-docker-ce.md](00-docker-ce.md) 2-2 의 지문 대조가 무효화된다.
 - **레거시 `docker-compose`(V1)**: Python 구현 독립 바이너리, 2023년 지원 종료.
   설치돼 있으면 제거한다. 명령은 하이픈 없는 `docker compose` 를 쓴다. 스크립트가
   V1 존재를 검증 실패로 처리한다.
@@ -85,5 +85,5 @@ ssh groom@10.10.10.150 'bash ~/03-compose.sh --verify-only'
 ## 다음
 
 compose 파일을 작성할 때의 표준·금지 항목·검증은 [compose-authoring.md](compose-authoring.md).
-데몬 설정([02-docker-ce.md](02-docker-ce.md) 6절)이 compose 에 미치는 영향을 먼저 읽는다 —
+데몬 설정([00-docker-ce.md](00-docker-ce.md) 6절)이 compose 에 미치는 영향을 먼저 읽는다 —
 `icc=false` 는 compose 네트워크에 적용되지 않는다.

@@ -16,9 +16,10 @@
 #   - 멱등: 재실행해도 상태가 수렴한다. 드롭인(60-auth-policy.conf) 과 ufw 규칙
 #     (주석 태그로 식별) 을 이 스크립트가 소유·관리한다.
 #
-# 관계: 01-ssh-client.sh 는 클라이언트 측(호스트 키 지문 대조, known_hosts,
-#       ~/.ssh/config, 무암호 접속 검증)을 담당한다. sshd 인증 정책은 SSH 위
-#       원격 sudo 로 바꾸지 않고 이 스크립트가 게스트에서 로컬로 관리한다.
+# 관계: 01-ssh-keys.sh 는 authorized_keys 배치(키 등록)를 담당한다. 02-ssh-client.sh
+#       는 클라이언트 측(호스트 키 지문 대조, known_hosts, ~/.ssh/config, 무암호
+#       접속 검증)을 담당한다. sshd 인증 정책은 SSH 위 원격 sudo 로 바꾸지 않고
+#       이 스크립트가 게스트에서 로컬로 관리한다.
 #
 # 역할: 실행 도구. 절차의 근거·기대 출력·사용법은 00-ssh-server.md 에 있다.
 #       여기에 절차 설명을 복제하지 않는다. 코드가 00-ssh-server.md 와 어긋나면
@@ -32,7 +33,6 @@ readonly HOST_KEY_PUB="/etc/ssh/ssh_host_ed25519_key.pub"
 
 PASSWORD_AUTH="off"                # off | lan | on
 LAN_CIDR="10.10.10.0/24"
-AUTHORIZED_KEY_FILE=""
 ALLOW_USERS=""
 PERMIT_ROOT="prohibit-password"
 FIREWALL="ufw"                     # ufw | none
@@ -50,9 +50,6 @@ usage() {
                                   lan : --lan-cidr 대역에서만 허용, 그 외 차단
                                   on  : 전 경로 허용 (무차별 대입 표면 노출 — 권장하지 않음)
   --lan-cidr <cidr>             --password-auth lan 의 허용 대역 (기본: 10.10.10.0/24)
-  --authorized-key-file <path>  호출 계정 ~/.ssh/authorized_keys 에 공개키를 추가한다
-                                  (중복 줄은 건너뛴다). 키 문자열을 인자로 받지 않는
-                                  이유는 셸 history 노출을 피하기 위함이다.
   --allow-users <u1,u2,...>     AllowUsers 로 로그인 계정을 화이트리스트로 제한한다
   --permit-root <prohibit-password|no|yes>
                                 PermitRootLogin (기본: prohibit-password)
@@ -62,6 +59,8 @@ usage() {
                                   any : 전 경로 허용 (외부 노출 시에만)
   --verify-only                설치·변경 없이 유효 설정만 검증한다
   -h, --help                   도움말
+
+공개키 등록(authorized_keys)은 이 스크립트가 아니라 01-ssh-keys.sh 가 한다.
 
 종료 코드: 0 성공 / 1 검증·적용 실패 / 2 인자 오류
 USAGE
@@ -81,7 +80,6 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --password-auth)       PASSWORD_AUTH="${2:?}"; shift 2 ;;
     --lan-cidr)            LAN_CIDR="${2:?}"; shift 2 ;;
-    --authorized-key-file) AUTHORIZED_KEY_FILE="${2:?}"; shift 2 ;;
     --allow-users)         ALLOW_USERS="${2:?}"; shift 2 ;;
     --permit-root)         PERMIT_ROOT="${2:?}"; shift 2 ;;
     --firewall)            FIREWALL="${2:?}"; shift 2 ;;
@@ -220,33 +218,9 @@ if ! grep -qE '(:|\.)22 ' <<<"$(sudo ss -tlnp 2>/dev/null || true)"; then
 fi
 ok "ssh.service enabled + active"
 
-# ── 2. 공개키 배치 (선택) ───────────────────────────────────────────────────
-if [[ -n "$AUTHORIZED_KEY_FILE" ]]; then
-  step "2. authorized_keys 배치 — ${HOME}/.ssh/authorized_keys"
-
-  [[ -f "$AUTHORIZED_KEY_FILE" ]] || die "키 파일이 없다: $AUTHORIZED_KEY_FILE"
-
-  install -d -m 700 "${HOME}/.ssh"
-  touch "${HOME}/.ssh/authorized_keys"
-  chmod 600 "${HOME}/.ssh/authorized_keys"
-
-  added=0 skipped=0
-  while IFS= read -r line; do
-    # 유효한 키 타입으로 시작하는 줄만 취한다. 주석·빈 줄·옵션 붙은 줄은 무시.
-    [[ "$line" =~ ^(ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp256|sk-ssh-ed25519@openssh\.com|sk-ecdsa-sha2-nistp256@openssh\.com)\  ]] || continue
-    if grep -qxF "$line" "${HOME}/.ssh/authorized_keys"; then
-      skipped=$((skipped + 1)); continue
-    fi
-    printf '%s\n' "$line" >> "${HOME}/.ssh/authorized_keys"
-    added=$((added + 1))
-  done < "$AUTHORIZED_KEY_FILE"
-
-  ok "추가 ${added} / 중복 건너뜀 ${skipped}"
-fi
-
-# ── 3. 방화벽 (ufw) ─────────────────────────────────────────────────────────
+# ── 2. 방화벽 (ufw) ─────────────────────────────────────────────────────────
 if [[ "$FIREWALL" == "ufw" ]]; then
-  step "3. 방화벽 — ufw (deny incoming, 22/tcp 만 허용)"
+  step "2. 방화벽 — ufw (deny incoming, 22/tcp 만 허용)"
 
   if ! command -v ufw > /dev/null 2>&1; then
     sudo apt-get install -y -qq ufw > /dev/null || die "ufw 설치 실패"
@@ -282,12 +256,12 @@ if [[ "$FIREWALL" == "ufw" ]]; then
     ok "ufw 활성화"
   fi
 else
-  step "3. 방화벽 — 건너뜀 (--firewall none)"
+  step "2. 방화벽 — 건너뜀 (--firewall none)"
   warn "방화벽을 구성하지 않는다. 22/tcp 노출 범위를 상위 계층에서 통제한다."
 fi
 
-# ── 4. 인증 정책 드롭인 생성 ────────────────────────────────────────────────
-step "4. 인증 정책 드롭인 — ${DROPIN}"
+# ── 3. 인증 정책 드롭인 생성 ────────────────────────────────────────────────
+step "3. 인증 정책 드롭인 — ${DROPIN}"
 
 if [[ -f "$LEGACY_DROPIN" ]]; then
   sudo rm -f "$LEGACY_DROPIN"
@@ -339,7 +313,7 @@ ok "sshd -t 통과"
 sudo systemctl reload ssh || die "reload 실패 — 이전 설정이 유지된다."
 ok "reload 완료 (기존 세션 무중단)"
 
-# ── 5. 검증 ─────────────────────────────────────────────────────────────────
+# ── 4. 검증 ─────────────────────────────────────────────────────────────────
 verify_all || die "검증 실패 — 위 항목을 확인한다."
 
 # ── 완료 ────────────────────────────────────────────────────────────────────
@@ -348,13 +322,16 @@ cat <<NEXT
   기록할 것 — 클라이언트 known_hosts 대조용 호스트 키 지문:
 $(ssh-keygen -lf "$HOST_KEY_PUB" 2>/dev/null | sed 's/^/    /')
 
-  클라이언트(Mac)에서:
-    ssh-keyscan -t ed25519 <이 VM IP> | ssh-keygen -lf -   # 위 지문과 대조
+  다음: 01-ssh-keys.sh 로 공개키를 authorized_keys 에 등록한다 (아직 배치 전이면
+        --password-auth lan 없이는 이 노드에 로그인할 수단이 없다).
+
+  등록 후 클라이언트(Mac)에서:
+    ssh-keyscan -t ed25519 <이 VM IP> | ssh-keygen -lf -   # 지문 대조
     ssh <user>@<이 VM IP> true && echo OK                  # 접속 확인
     ── 클라이언트가 22/tcp 허용 대역(${SSH_FROM}) 밖이면 방화벽에서 차단된다.
 
   방화벽 상태:  sudo ufw status verbose
-  이후 Docker 설치는 서버에서 02-docker-ce.sh 를 실행한다.
+  Docker 설치는 ../docker/00-docker-ce.sh (SSH 접속 구성 완료 후).
 NEXT
 
 cat <<'RESIDUAL'
@@ -367,8 +344,8 @@ cat <<'RESIDUAL'
       비 LAN 경로가 생겨도 그 경로에는 22/tcp·비밀번호가 노출되지 않는다 (의도된 동작).
     - 비밀번호 인증이 유효하려면 해당 계정에 강한 암호가 설정돼 있어야 한다.
       암호 미설정(NP)·약한 암호에서는 이 정책이 순손실이다.
-    - ufw 는 호스트 자신의 인바운드만 통제한다. 이후 02-docker-ce.sh 로 Docker 를
-      설치하면 -p 로 게시한 컨테이너 포트는 ufw 를 우회한다 (Docker 가 nat/DOCKER
+    - ufw 는 호스트 자신의 인바운드만 통제한다. 이후 ../docker/00-docker-ce.sh 로
+      Docker 를 설치하면 -p 로 게시한 컨테이너 포트는 ufw 를 우회한다 (Docker 가 nat/DOCKER
       체인에 직접 규칙을 삽입, ufw FORWARD 평가보다 먼저). 컨테이너 포트는
       127.0.0.1 바인딩 또는 DOCKER-USER 체인으로 별도 통제한다.
     - ufw 규칙은 --ssh-from 의 주소군만 처리한다. sshd 가 IPv6(::)로도 리슨하면

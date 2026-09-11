@@ -1,8 +1,8 @@
 # Compose 파일 저작 표준
 
 > **역할: 주제 문서.** 설치가 아니라 **compose 파일을 작성하는 기준**이다.
-> 플러그인 설치는 [03-compose.md](03-compose.md), 데몬 설정은 [02-docker-ce.md](02-docker-ce.md) 6절.
-> 다중 노드는 [04-swarm-cluster.md](04-swarm-cluster.md) — 아래 전제(네트워크 격리, 루프백 바인딩)가 성립하지 않는다.
+> 플러그인 설치는 [01-compose.md](01-compose.md), 데몬 설정은 [00-docker-ce.md](00-docker-ce.md) 6절.
+> 다중 노드는 [02-swarm-cluster.md](02-swarm-cluster.md) — 아래 전제(네트워크 격리, 루프백 바인딩)가 성립하지 않는다.
 
 전제: `docker-compose-plugin` 설치 완료(v5.5.0), `/etc/docker/daemon.json` 에
 `no-new-privileges`, `icc=false`, `live-restore`, 로그 제한이 적용된 상태.
@@ -149,7 +149,7 @@ Docker 는 자체 iptables 규칙을 `DOCKER` 체인에 삽입한다. 이 규칙
 체인 정책보다 먼저 평가되므로, **`ufw deny` 상태에서도 `0.0.0.0` 으로 공개한 포트는
 LAN 에 노출된다.** 방화벽으로 막았다고 가정하면 안 된다.
 
-Mac 에서의 접근은 SSH 포트 포워딩을 쓴다 ([01-ssh-client.md](01-ssh-client.md) 접속 방법).
+Mac 에서의 접근은 SSH 포트 포워딩을 쓴다 ([../ssh-access/02-ssh-client.md](../ssh-access/02-ssh-client.md) 접속 방법).
 
 ```bash
 ssh -L 8080:localhost:8080 groom@10.10.10.150
@@ -244,6 +244,6 @@ egress blocked
 - digest 고정은 재현성을 보장하지만 보안 패치를 자동으로 받지 못한다.
   갱신 주기와 담당을 별도로 정한다.
 - 이 문서는 단일 호스트 compose 기준이다. 다중 노드로 확장하면 네트워크 격리
-  전제(`internal`, 루프백 바인딩)가 성립하지 않는다 → [04-swarm-cluster.md](04-swarm-cluster.md).
+  전제(`internal`, 루프백 바인딩)가 성립하지 않는다 → [02-swarm-cluster.md](02-swarm-cluster.md).
 - 본 예시는 로컬에서 `docker compose config` 로 검증하지 않았다. 적용 전 대상
   호스트에서 위 「검증」 절차를 수행한다.

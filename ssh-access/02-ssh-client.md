@@ -1,19 +1,21 @@
-# 01 · SSH 클라이언트 — 지문 대조 · 접속
+# 02 · SSH 클라이언트 — 지문 대조 · 접속
 
 **요약.** macOS 클라이언트에서 실행해 서버 호스트 키 지문을 대조·`known_hosts`
-등록하고, `~/.ssh/config` 별칭을 만들고, 무암호 접속을 검증한다. `authorized_keys`·
-비밀번호 정책은 [00-ssh-server.md](00-ssh-server.md) 소관.
+등록하고, `~/.ssh/config` 별칭을 만들고, 무암호 접속을 검증한다. `authorized_keys`
+등록은 [01-ssh-keys.md](01-ssh-keys.md), 비밀번호 정책은
+[00-ssh-server.md](00-ssh-server.md) 소관.
 
 > **역할: 단계 문서.** 이 단계의 근거·실행·옵션·검증·잔여 위험을 한곳에 둔다.
-> 실행 도구는 [`01-ssh-client.sh`](01-ssh-client.sh). 서버 측(sshd·방화벽·authorized_keys)은
-> [00-ssh-server.md](00-ssh-server.md). 연결 실패 판별은 [../network-troubleshooting.md](../network-troubleshooting.md).
+> 실행 도구는 [`02-ssh-client.sh`](02-ssh-client.sh). 서버 측(sshd·방화벽)은
+> [00-ssh-server.md](00-ssh-server.md), 키 등록은 [01-ssh-keys.md](01-ssh-keys.md).
+> 연결 실패 판별은 [../network-troubleshooting.md](../network-troubleshooting.md).
 
 macOS 클라이언트(`10.10.10.1`)에서 실행한다. 호스트 키 지문을 대조해 `known_hosts`
 에 등록하고, `~/.ssh/config` 별칭을 두고, 무암호 접속을 검증한다.
 
-`authorized_keys` 배치와 비밀번호 인증 정책은 [00-ssh-server.md](00-ssh-server.md)
-가 노드에서 담당한다. 이 문서는 **클라이언트가 그 서버에 올바르게 접속되는지**
-까지다.
+`authorized_keys` 배치는 [01-ssh-keys.md](01-ssh-keys.md), 비밀번호 인증 정책은
+[00-ssh-server.md](00-ssh-server.md) 가 노드에서 담당한다. 이 문서는 **클라이언트가
+그 서버에 올바르게 접속되는지**까지다.
 
 ---
 
@@ -58,7 +60,7 @@ ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
 Mac 에서 그 값을 넘겨 실행한다.
 
 ```bash
-./01-ssh-client.sh --expect-fpr SHA256:HzsGa1MYvEl4YPh4sZ5kZGQ4mBcv6zVGmKYD8LqnS5A
+./02-ssh-client.sh --expect-fpr SHA256:HzsGa1MYvEl4YPh4sZ5kZGQ4mBcv6zVGmKYD8LqnS5A
 ```
 
 `--expect-fpr` 를 생략하면 수집한 지문을 출력하고 대화형 확인을 요구한다.
@@ -80,9 +82,9 @@ Mac 에서 그 값을 넘겨 실행한다.
 1. **도달성** — 공개키 존재, ICMP, `22/tcp` 개방 확인.
 2. **1-1 호스트 키 지문 대조** — `ssh-keyscan -t ed25519` 로 수집, `--expect-fpr`
    또는 대화형 확인, 일치 시 `known_hosts` 등록. `~/.ssh` 700, `known_hosts` 600.
-3. **1-2 공개키 배포** — 키 인증이 이미 되면 건너뛴다. 아니면 `ssh-copy-id`.
-   (노드에서 [00-ssh-server.md](00-ssh-server.md) `--authorized-key-file` 로 이미
-   배치했다면 이 단계는 자동으로 건너뛴다.)
+3. **1-2 공개키 배포** — 키 인증이 이미 되면 건너뛴다. 아니면 `ssh-copy-id`
+   (SSH·비밀번호가 이미 되는 경우의 대안 경로). 노드에서
+   [01-ssh-keys.md](01-ssh-keys.md) 로 이미 배치했다면 이 단계는 자동으로 건너뛴다.
 4. **검증** — `ssh -o PasswordAuthentication=no -o BatchMode=yes ... 'id'` 성공,
    출력에 `(sudo)` 포함 확인 (없으면 서버 측 Docker 스크립트가 실패한다).
 5. **비밀번호 인증 상태** — 데몬이 광고하는 인증 수단을 출력. `--disable-password`
@@ -140,9 +142,9 @@ debug1: Authentications that can continue: publickey
 ## 다음 단계
 
 ```bash
-scp 02-docker-ce.sh 03-compose.sh groom@10.10.10.150:~/
-ssh -t groom@10.10.10.150 'bash ~/02-docker-ce.sh'
-ssh -t groom@10.10.10.150 'bash ~/03-compose.sh'   # Compose 가 필요한 경우
+scp ../docker/00-docker-ce.sh ../docker/01-compose.sh groom@10.10.10.150:~/
+ssh -t groom@10.10.10.150 'bash ~/00-docker-ce.sh'
+ssh -t groom@10.10.10.150 'bash ~/01-compose.sh'   # Compose 가 필요한 경우
 ```
 
 ---
@@ -152,9 +154,10 @@ ssh -t groom@10.10.10.150 'bash ~/03-compose.sh'   # Compose 가 필요한 경�
 - `~/.ssh/id_rsa` 는 파일명과 달리 ED25519 키일 수 있다 (실측: comment `jarrod@macbok2`).
   RSA 를 전제한 도구·문서가 오작동할 수 있으므로 `ssh-keygen -lf` 로 실제 타입을
   확인한다.
-- `--disable-password`(01) 와 `00-ssh-server.sh --password-auth`(00) 는 같은 드롭인
-  영역을 다룬다. 한 경로만 쓴다. 콘솔 접근이 되면 00 을 기준으로 한다.
+- `--disable-password`(이 스크립트) 와 `00-ssh-server.sh --password-auth`(00) 는
+  같은 드롭인 영역을 다룬다. 한 경로만 쓴다. 콘솔 접근이 되면 00 을 기준으로 한다.
 - 복제 VM 은 호스트 키 지문이 동일해 `known_hosts` 로 노드를 구별하지 못한다.
-  [04-swarm-cluster.md](04-swarm-cluster.md) 1-4·3-1 절에서 신원을 분리한 뒤 재대조한다.
+  [../docker/02-swarm-cluster.md](../docker/02-swarm-cluster.md) 1-4·3-1 절에서
+  신원을 분리한 뒤 재대조한다.
 - 지문을 대조하지 않은 TOFU 등록은 MITM 을 탐지하지 못한다. `--expect-fpr` 를
   생략한 대화형 확인은 운영자의 육안 대조에 의존한다.

@@ -1,12 +1,13 @@
 # 00 · SSH 서버 · 방화벽 · 인증 정책
 
 **요약.** 대상 노드에서 로컬로 실행해 openssh-server 설치·소켓 활성화 해제
-(`ssh.service` 고정)·ufw(22/tcp 만 LAN 허용)·`authorized_keys` 배치·sshd 인증 정책
-(기본 publickey 전용)을 한 번에 구성한다. SSH·클라이언트 불필요.
+(`ssh.service` 고정)·ufw(22/tcp 만 LAN 허용)·sshd 인증 정책(기본 publickey 전용)을
+구성한다. 공개키 등록은 [01-ssh-keys.md](01-ssh-keys.md) 소관. SSH·클라이언트 불필요.
 
 > **역할: 단계 문서.** 이 단계의 근거·실행·옵션·기대 출력·검증·잔여 위험을 한곳에 둔다.
 > 실행 도구는 [`00-ssh-server.sh`](00-ssh-server.sh). 디렉터리 구성은 [README.md](README.md).
-> 클라이언트 측(지문 대조·`known_hosts`·`~/.ssh/config`)은 [01-ssh-client.md](01-ssh-client.md).
+> 공개키 등록은 [01-ssh-keys.md](01-ssh-keys.md). 클라이언트 측(지문 대조·
+> `known_hosts`·`~/.ssh/config`)은 [02-ssh-client.md](02-ssh-client.md).
 
 대상 노드에서 **로컬로** 실행한다 (게스트 콘솔 또는 로컬 세션). SSH·클라이언트가
 필요 없다. macOS 의 앱 단위 로컬 네트워크 권한 때문에 클라이언트에서 sshd 설정을
@@ -24,22 +25,25 @@
 ## 실행
 
 ```bash
-# 키 전용 (zero-trust 기본값) — 공개키를 노드로 먼저 옮긴 뒤
-bash 00-ssh-server.sh --authorized-key-file ~/lab_groom.pub
+# zero-trust 기본값 — 비밀번호 인증 없음, ufw 로 22/tcp 만 LAN 허용
+bash 00-ssh-server.sh
 
-# 키 + LAN 격리 대역 비밀번호 폴백
-bash 00-ssh-server.sh --authorized-key-file ~/lab_groom.pub --password-auth lan
+# LAN 격리 대역 비밀번호 폴백을 함께 켤 경우
+bash 00-ssh-server.sh --password-auth lan
 ```
 
-### 스크립트·공개키 전달
+공개키가 아직 없어도 이 스크립트는 완결된다 — 로그인 가능 여부는
+[01-ssh-keys.md](01-ssh-keys.md) 가 결정한다. `--password-auth off`(기본) 로 두고
+아직 키를 안 넣었다면, 이 세션(콘솔)이 유일한 접근 경로임을 유의한다.
 
-이 단계 이전에는 SSH·`scp` 경로가 없다. 스크립트와 `.pub` 파일을 노드에 올리는
-방법:
+### 스크립트 전달
+
+이 단계 이전에는 SSH·`scp` 경로가 없다. 스크립트를 노드에 올리는 방법:
 
 | 방법 | 비고 |
 |---|---|
-| `git clone` + 커밋 SHA 체크아웃 | 무결성이 커밋 해시로 보장된다. 여러 파일을 한 번에 가져온다 — 전량이 필요하면 이 방법 |
-| `wget` raw URL (아래) | 파일 하나만 필요할 때. `00-ssh-server.sh` 는 자기완결이라 이 파일만으로 실행된다 |
+| `git clone` + 커밋 SHA 체크아웃 | 무결성이 커밋 해시로 보장된다. 여러 파일을 한 번에 가져온다 |
+| `wget` raw URL (아래) | 파일 하나만 필요할 때. 이 스크립트는 자기완결이라 이 파일만으로 실행된다 |
 | VMware 공유 폴더 / 클립보드 붙여넣기 / USB | 네트워크가 없는 노드 |
 
 **`wget` 은 `\| bash` 로 잇지 않는다.** 대상은 root 등가 권한을 얻는 호스트다.
@@ -47,16 +51,16 @@ bash 00-ssh-server.sh --authorized-key-file ~/lab_groom.pub --password-auth lan
 
 ```bash
 # main 이 아니라 커밋 SHA 로 고정한다 — 받는 내용이 확정되고 raw CDN 캐시 지연도 없다
-REF=1963e4b8f440c1d42b24ff6d4c807db9fbfb8f94   # 이 값 대신 git log -1 --format=%H 의 최신 SHA 를 쓴다
-BASE="https://raw.githubusercontent.com/yundo-main/install/${REF}/docker"
+REF=<git log -1 --format=%H 의 최신 SHA>
+BASE="https://raw.githubusercontent.com/yundo-main/install/${REF}/ssh-access"
 
 wget -q "${BASE}/00-ssh-server.sh" -O 00-ssh-server.sh     # TLS 검증 기본 — --no-check-certificate 금지
 
 sha256sum 00-ssh-server.sh                                  # 별도 채널(로컬 clone)의 기대값과 대조
-#   기대값:  git -C <clone> show ${REF}:docker/00-ssh-server.sh | sha256sum
+#   기대값:  git -C <clone> show ${REF}:ssh-access/00-ssh-server.sh | sha256sum
 
 less 00-ssh-server.sh                                       # 무엇을 sudo 로 실행하는지 직접 본다
-bash 00-ssh-server.sh --authorized-key-file ~/lab_groom.pub
+bash 00-ssh-server.sh
 ```
 
 private 리포면 `gh api ...` 또는 `wget --header="Authorization: Bearer <token>"` 를
@@ -69,12 +73,14 @@ private 리포면 `gh api ...` 또는 `wget --header="Authorization: Bearer <tok
 |---|---|
 | `--password-auth <off\|lan\|on>` | 비밀번호 인증 정책. 기본 `off`(publickey 전용). `lan`: `--lan-cidr` 대역에서만 허용. `on`: 전 경로 허용 — 무차별 대입 표면 노출, 권장하지 않음 |
 | `--lan-cidr <cidr>` | `--password-auth lan` 의 허용 대역 (기본 `10.10.10.0/24`) |
-| `--authorized-key-file <path>` | 호출 계정 `~/.ssh/authorized_keys` 에 공개키 추가 (중복 줄 제외). 키 문자열을 인자로 받지 않는다 — 셸 history 노출 회피 |
 | `--allow-users <u1,u2,...>` | `AllowUsers` 로 로그인 계정 화이트리스트 |
 | `--permit-root <prohibit-password\|no\|yes>` | `PermitRootLogin` (기본 `prohibit-password`) |
 | `--firewall <ufw\|none>` | 호스트 방화벽. 기본 `ufw`. `none`: 건드리지 않음 (nftables 직접 운용 등) |
 | `--ssh-from <cidr\|any>` | 22/tcp 허용 출처 (기본 `--lan-cidr` 값). `any`: 전 경로 |
 | `--verify-only` | 설치·변경 없이 유효 상태만 검증 |
+
+공개키 등록(`authorized_keys`)은 이 스크립트가 아니라
+[01-ssh-keys.sh](01-ssh-keys.sh) 가 한다.
 
 ---
 
@@ -94,12 +100,7 @@ systemctl is-active ssh.service   # active
 systemctl is-active ssh.socket    # inactive 여야 한다
 ```
 
-### 2. 공개키 배치 (`--authorized-key-file` 지정 시)
-
-`~/.ssh` 700, `authorized_keys` 600 을 보장하고, 유효한 키 타입으로 시작하는 줄만
-취해 중복 없이 추가한다.
-
-### 3. 방화벽 — ufw (`--firewall ufw`, 기본)
+### 2. 방화벽 — ufw (`--firewall ufw`, 기본)
 
 ```
 default deny incoming / allow outgoing
@@ -111,7 +112,7 @@ logging low
 - 멱등: 재실행 시 주석 태그가 붙은 자기 규칙만 골라 제거 후 재적용한다. 수동
   추가 규칙은 건드리지 않는다.
 
-### 4. 인증 정책 드롭인 — `/etc/ssh/sshd_config.d/60-auth-policy.conf`
+### 3. 인증 정책 드롭인 — `/etc/ssh/sshd_config.d/60-auth-policy.conf`
 
 이 스크립트가 이 드롭인 하나만 소유·관리한다. 레거시 `60-no-password.conf` 가
 있으면 제거한다.
@@ -162,7 +163,7 @@ sudo ss -tlnp | grep ':22 '
 # 방화벽
 sudo ufw status verbose
 
-# 호스트 키 지문 — 이 값을 받아 적어 01-ssh-client.md 에서 대조한다
+# 호스트 키 지문 — 이 값을 받아 적어 02-ssh-client.md 에서 대조한다
 ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
 ```
 
@@ -193,7 +194,7 @@ Status: active   Default: deny (incoming), allow (outgoing)
   경로가 생겨도 그 경로에는 22/tcp·비밀번호가 노출되지 않는다 (의도된 동작).
 - 비밀번호 인증이 유효하려면 계정에 강한 암호가 있어야 한다. 미설정(`NP`)·약한
   암호에서는 이 정책이 순손실이다.
-- **ufw 는 호스트 자신의 인바운드만 통제한다.** [02-docker-ce.md](02-docker-ce.md)
+- **ufw 는 호스트 자신의 인바운드만 통제한다.** [../docker/00-docker-ce.md](../docker/00-docker-ce.md)
   로 Docker 를 설치하면 `-p` 게시 컨테이너 포트는 ufw 를 우회한다 (Docker 가
   `nat`/`DOCKER` 체인에 직접 규칙 삽입, ufw `FORWARD` 평가보다 먼저). 컨테이너
   포트는 `127.0.0.1` 바인딩 또는 `DOCKER-USER` 체인으로 별도 통제한다.
@@ -205,4 +206,7 @@ Status: active   Default: deny (incoming), allow (outgoing)
   차단한다. root 키 로그인은 별도로 통제한다.
 - 호스트 키는 재생성하지 않는다. 회전이 필요하면 수동으로 수행하고 전 클라이언트
   에서 지문을 재대조한다. 복제 VM 의 호스트 키 승계 문제는
-  [04-swarm-cluster.md](04-swarm-cluster.md) 1-4 절.
+  [../docker/02-swarm-cluster.md](../docker/02-swarm-cluster.md) 1-4 절.
+- 인자 없이 실행하면 `authorized_keys` 는 그대로다. 이 노드에 아직 어떤 공개키도
+  등록돼 있지 않다면, 이 스크립트를 실행한 콘솔 세션 자체가 유일한 접근 경로다 —
+  [01-ssh-keys.md](01-ssh-keys.md) 를 이어서 실행한다.

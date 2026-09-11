@@ -11,12 +11,18 @@
 install/
 ├── readme.md                    문서 역할 정책, 디렉터리 구조  ← 현재 문서
 ├── network-troubleshooting.md   공용 참조 — 연결 실패 시 판별 절차
+├── ssh-access/                  SSH 키 기반 접속 구성 (노드 공통, 대상 무관)
 ├── docker/                      Ubuntu 24.04 Docker CE + Swarm
 └── k8s/                         Kubernetes 설치
 ```
 
 `network-troubleshooting.md` 는 특정 설치 절차에 종속되지 않는 공용 참조다.
 하위 디렉터리의 단계 문서가 이를 참조한다. 반대 방향 참조는 두지 않는다.
+
+`ssh-access/` 는 특정 설치 대상에 종속되지 않는다 — Docker 노드든 향후 k8s
+노드든 SSH 로 접속할 노드라면 공통으로 거치는 절차라서 `docker/` 에서 분리했다.
+`docker/` 는 이 절차가 끝났다고 전제하고 시작한다 (하위 디렉터리 추가 기준의
+"절차 자체가 다르면 별도 디렉터리로 분리" 적용 사례).
 
 ---
 
@@ -35,7 +41,7 @@ install/
 ### 단계 문서 `NN-<concept>.md`
 
 실행 순서가 있는 각 단계는 문서와 스크립트를 **같은 번호·이름의 페어**로 둔다
-(`02-docker-ce.md` ↔ `02-docker-ce.sh`). 문서는 그 단계의 근거·실행·옵션·기대
+(`00-docker-ce.md` ↔ `00-docker-ce.sh`). 문서는 그 단계의 근거·실행·옵션·기대
 출력·검증·잔여 위험을 **한 파일에 모은다.**
 
 - 스크립트는 절차 설명을 복제하지 않고 헤더에서 자기 단계 문서를 가리킨다.
@@ -50,7 +56,7 @@ install/
 
 > **이전 구조(`plan.md` 근거 / `USAGE.md` 운영 / `README.md` 인덱스 3종 분리)에서
 > 전환했다.** 스크립트로 도는 절차를 근거·운영 두 파일로 나누면 같은 명령이 양쪽에
-> 복제된다. `docker/04-swarm-cluster.md` 가 이 중복 때문에 먼저 자기완결 단일 파일로
+> 복제된다. `docker/02-swarm-cluster.md`(당시 04-swarm-cluster.md)가 이 중복 때문에 먼저 자기완결 단일 파일로
 > 통합됐고, 나머지 단계도 같은 방식으로 정리했다. 판단 기준은 **중복이 줄어드는가**다.
 
 ### 주제 문서 `<concept>.md`
@@ -103,13 +109,18 @@ README.md  →  단계 문서·주제 문서          (인덱스, 역참조 없�
 
 | 디렉터리 | README.md | 단계 문서 `NN-*.md` | 주제 문서 | 스크립트 |
 |---|---|---|---|---|
-| [docker/](docker/) | O | O (00–04) | `compose-authoring.md`, `controls.md` | 00–03 |
+| [ssh-access/](ssh-access/) | O | O (00–02) | `controls.md` | 00–01 |
+| [docker/](docker/) | O | O (00–02) | `compose-authoring.md`, `controls.md` | 00–01 |
 | [k8s/](k8s/) | — | `plan.md` (구 구조) | — | — |
 
-`docker/` 의 스크립트는 4개다 — `00-ssh-server.sh`(노드 로컬), `01-ssh-client.sh`
-(클라이언트), `02-docker-ce.sh`(Docker CE), `03-compose.sh`(Compose). Swarm 구성은
-`sudo` 비밀번호와 지문 육안 대조를 요구해 스크립트화하지 않고
-`docker/04-swarm-cluster.md` 에 수동 절차로 뒀다.
+`ssh-access/` 의 스크립트는 2개다 — `00-ssh-server.sh`(노드 로컬: sshd·방화벽·
+인증 정책), `01-ssh-keys.sh`(노드 로컬: authorized_keys 등록). `02-ssh-client.sh`
+는 macOS 클라이언트에서 실행하는 검증 도구다.
+
+`docker/` 의 스크립트는 2개다 — `00-docker-ce.sh`(Docker CE), `01-compose.sh`
+(Compose). Swarm 구성은 `sudo` 비밀번호와 지문 육안 대조를 요구해 스크립트화하지
+않고 `docker/02-swarm-cluster.md` 에 수동 절차로 뒀다.
 
 `k8s/` 는 아직 `plan.md` 만 존재한다. 스크립트화 시 위 단계 문서 정책을 적용해
-`NN-<concept>.{sh,md}` 페어로 재구성한다.
+`NN-<concept>.{sh,md}` 페어로 재구성하고, SSH 접속은 `ssh-access/` 를 그대로
+재사용한다.

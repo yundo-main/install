@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# 02-docker-ce.sh — Ubuntu 24.04 에 Docker 공식 저장소로 Docker CE 를 설치한다.
-# 근거·기대 출력·사용법은 02-docker-ce.md 에 있다. 실행 위치: Ubuntu 24.04 VM (대상 호스트)
+# 00-docker-ce.sh — Ubuntu 24.04 에 Docker 공식 저장소로 Docker CE 를 설치한다.
+# 근거·기대 출력·사용법은 00-docker-ce.md 에 있다. 실행 위치: Ubuntu 24.04 VM (대상 호스트)
 #
 # 설계 원칙
 #   - 신뢰 경로 우선: GPG 키는 지문을 대조한 뒤에만 keyrings 에 배치한다.
@@ -9,8 +9,8 @@
 #   - 검증은 설정 파일이 아니라 데몬·컨테이너의 실제 상태로 수행한다.
 #   - 멱등: 재실행해도 상태가 수렴한다.
 #
-# 역할: 실행 도구. 절차의 근거·기대 출력·사용법은 02-docker-ce.md 에 있다.
-#       여기에 절차 설명을 복제하지 않는다. 코드가 02-docker-ce.md 와 어긋나면 문서가 기준이다.
+# 역할: 실행 도구. 절차의 근거·기대 출력·사용법은 00-docker-ce.md 에 있다.
+#       여기에 절차 설명을 복제하지 않는다. 코드가 00-docker-ce.md 와 어긋나면 문서가 기준이다.
 #       서버로 단독 scp 되므로 자기완결적이어야 한다 — 외부 라이브러리를 참조하지 않는다.
 #
 set -euo pipefail
@@ -28,7 +28,7 @@ VERIFY_ONLY=0
 
 usage() {
   cat <<'USAGE'
-사용법: bash 02-docker-ce.sh [옵션]
+사용법: bash 00-docker-ce.sh [옵션]
 
   --docker-group          호출 계정을 docker 그룹에 추가한다 (기본: 비활성)
                           ── docker 그룹은 root 등가 권한이다. 아래 경고 참조.
@@ -88,8 +88,8 @@ verify_all() {
   containerd --version                 || rc=1
   runc --version 2>/dev/null | sed -n 1p || rc=1
   docker buildx version                || rc=1
-  # compose 는 03-compose.sh 소관이다. 미설치는 실패로 보지 않는다.
-  docker compose version 2>/dev/null || warn "compose 미설치 — 필요하면 03-compose.sh 를 실행한다"
+  # compose 는 01-compose.sh 소관이다. 미설치는 실패로 보지 않는다.
+  docker compose version 2>/dev/null || warn "compose 미설치 — 필요하면 01-compose.sh 를 실행한다"
 
   step "검증 — systemd 유닛"
   local u
@@ -205,7 +205,7 @@ apt-cache policy docker-ce 2>/dev/null | head -n 5 || true
 # ── 3. 패키지 설치 ───────────────────────────────────────────────────────────
 step "3. 패키지 설치"
 
-# Compose 플러그인은 03-compose.sh 소관이다. 여기서 설치하지 않는다.
+# Compose 플러그인은 01-compose.sh 소관이다. 여기서 설치하지 않는다.
 sudo apt-get install -y \
   docker-ce docker-ce-cli containerd.io docker-buildx-plugin
 ok "설치 완료"
@@ -275,7 +275,7 @@ else
 fi
 
 step "설치 완료"
-printf '  Compose 가 필요하면 별도로 설치한다: bash 03-compose.sh\n'
+printf '  Compose 가 필요하면 별도로 설치한다: bash 01-compose.sh\n'
 cat <<'RESIDUAL'
   잔여 위험 / 전제
     - icc=false 는 기본 bridge 네트워크에만 적용된다. 사용자 정의 네트워크의

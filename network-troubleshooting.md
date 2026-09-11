@@ -1,8 +1,8 @@
 # 네트워크 연결 진단
 
 `10.10.10.150` (Ubuntu VM) 에 접속되지 않을 때의 판별 절차.
-SSH 서버 구성은 [docker/00-ssh-server.md](docker/00-ssh-server.md),
-클라이언트 접속은 [docker/01-ssh-client.md](docker/01-ssh-client.md) 참조.
+SSH 서버 구성은 [ssh-access/00-ssh-server.md](ssh-access/00-ssh-server.md),
+클라이언트 접속은 [ssh-access/02-ssh-client.md](ssh-access/02-ssh-client.md) 참조.
 
 ---
 
