@@ -1,5 +1,10 @@
 # 02 · Docker CE — 저장소 신뢰 · 설치 · 데몬 설정
 
+**요약.** 대상 호스트에서 실행해 Docker 공식 저장소를 GPG 지문 대조 후 등록하고
+Docker CE(engine·cli·containerd·buildx)를 설치한 뒤 `daemon.json`(로그 제한·
+`no-new-privileges`·`icc=false`·`live-restore`)을 적용한다. Compose 는
+[03-compose.md](03-compose.md).
+
 > **역할: 단계 문서.** 근거·기대 출력·대조 상수·옵션·검증·잔여 위험을 한곳에 둔다.
 > 실행 도구는 [`02-docker-ce.sh`](02-docker-ce.sh). Compose 플러그인은
 > [03-compose.md](03-compose.md), compose 파일 저작 표준은 [compose-authoring.md](compose-authoring.md).

@@ -1,5 +1,9 @@
 # 01 · SSH 클라이언트 — 지문 대조 · 접속
 
+**요약.** macOS 클라이언트에서 실행해 서버 호스트 키 지문을 대조·`known_hosts`
+등록하고, `~/.ssh/config` 별칭을 만들고, 무암호 접속을 검증한다. `authorized_keys`·
+비밀번호 정책은 [00-ssh-server.md](00-ssh-server.md) 소관.
+
 > **역할: 단계 문서.** 이 단계의 근거·실행·옵션·검증·잔여 위험을 한곳에 둔다.
 > 실행 도구는 [`01-ssh-client.sh`](01-ssh-client.sh). 서버 측(sshd·방화벽·authorized_keys)은
 > [00-ssh-server.md](00-ssh-server.md). 연결 실패 판별은 [../network-troubleshooting.md](../network-troubleshooting.md).

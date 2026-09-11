@@ -1,5 +1,9 @@
 # 00 · SSH 서버 · 방화벽 · 인증 정책
 
+**요약.** 대상 노드에서 로컬로 실행해 openssh-server 설치·소켓 활성화 해제
+(`ssh.service` 고정)·ufw(22/tcp 만 LAN 허용)·`authorized_keys` 배치·sshd 인증 정책
+(기본 publickey 전용)을 한 번에 구성한다. SSH·클라이언트 불필요.
+
 > **역할: 단계 문서.** 이 단계의 근거·실행·옵션·기대 출력·검증·잔여 위험을 한곳에 둔다.
 > 실행 도구는 [`00-ssh-server.sh`](00-ssh-server.sh). 디렉터리 구성은 [README.md](README.md).
 > 클라이언트 측(지문 대조·`known_hosts`·`~/.ssh/config`)은 [01-ssh-client.md](01-ssh-client.md).

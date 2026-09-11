@@ -1,5 +1,9 @@
 # Docker Swarm 클러스터 구성
 
+**요약.** manager 1 + worker 2 를 Swarm 으로 묶는 수동 절차. 복제 노드 신원 분리
+→ `live-restore` 제거 → `docker swarm init` → 워커 토큰 scp 전달·가입 → 토큰 회전.
+스크립트 없음, 전제는 전 노드 00~03 완료.
+
 > **역할: 단계 문서 (04).** 근거·수동 절차·기대 출력·잔여 위험을 한곳에 둔다.
 > 단일 노드 구성은 [00-ssh-server.md](00-ssh-server.md) ~ [03-compose.md](03-compose.md).
 > 이 절차는 스크립트화하지 않았다 — 이유는 [README.md](README.md) 참조.

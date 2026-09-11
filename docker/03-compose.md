@@ -1,5 +1,9 @@
 # 03 · Compose V2 플러그인
 
+**요약.** 필요한 노드에서 실행해 서명된 Docker 저장소의 `docker-compose-plugin`
+패키지로 Compose V2 를 설치한다. GitHub 릴리스 바이너리·레거시 V1 은 배제.
+compose 파일 작성 기준은 [compose-authoring.md](compose-authoring.md).
+
 > **역할: 단계 문서.** 근거·기대 출력·옵션·검증을 한곳에 둔다.
 > 실행 도구는 [`03-compose.sh`](03-compose.sh). compose 파일 **저작 표준**은
 > 별도 문서 [compose-authoring.md](compose-authoring.md).
