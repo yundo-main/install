@@ -44,9 +44,10 @@ usage() {
   --verify-only     생성·전송 없이 기존 키 상태만 표시한다
   -h, --help        도움말
 
-전송(scp)은 대상 노드의 비밀번호 인증이 켜져 있어야 동작한다
-(00-ssh-server.md --password-auth lan|on). 꺼져 있으면 --skip-transfer 로
-생성까지만 하고, 00-ssh-server.md 의 콘솔 붙여넣기 절차로 수동 전송한다.
+전송(scp)은 대상 노드의 비밀번호 인증이 켜져 있어야 동작한다 — 00-ssh-server.md
+3절에서 LAN 비밀번호 허용 블록을 선택한 경우. 꺼져 있으면(zero-trust 블록을
+선택) --skip-transfer 로 생성까지만 하고, 00-ssh-server.md 의 콘솔 붙여넣기
+절차로 수동 전송한다.
 
 종료 코드: 0 성공 / 1 검증·생성·전송 실패 / 2 인자 오류
 USAGE
