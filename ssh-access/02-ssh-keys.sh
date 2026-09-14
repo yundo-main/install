@@ -159,8 +159,9 @@ verify_all || die "검증 실패 — 위 항목을 확인한다."
 
 step "완료 — 다음 단계"
 cat <<NEXT
-  클라이언트(Mac)에서 무암호 접속 확인:
-    ssh <user>@<이 VM IP> true && echo OK
+  클라이언트(Mac)에서 무암호 접속 확인 — 방금 등록한 그 키를 -i 로 명시한다
+  (안 하면 ~/.ssh/config 나 에이전트의 다른 키가 먼저 시도돼 혼동될 수 있다):
+    ssh -o IdentitiesOnly=yes -i ~/.ssh/<키 이름> <user>@<이 VM IP> true && echo OK
 
   아직 안 됐으면 00-ssh-server.md 로 sshd·방화벽·인증 정책을 먼저 구성했는지
   확인한다. 호스트 키 지문 대조는 그 문서의 수동 접속 절차에서 한다.

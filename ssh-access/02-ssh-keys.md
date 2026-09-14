@@ -73,10 +73,15 @@ bash 02-ssh-keys.sh --verify-only
     ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...
 ```
 
-**Mac(클라이언트)에서** 최종 확인:
+**Mac(클라이언트)에서** 최종 확인 — **방금 등록한 그 키**를 명시적으로
+지정한다:
 ```bash
-ssh -o BatchMode=yes <user>@<VM IP> true && echo OK
+ssh -o BatchMode=yes -o IdentitiesOnly=yes -i ~/.ssh/lab_groom <user>@<VM IP> true && echo OK
 ```
+`-i`/`-o IdentitiesOnly=yes` 없이 그냥 `ssh <user>@<VM IP>` 로 테스트하면,
+`~/.ssh/config` 의 기존 `IdentityFile`(다른 키로 고정돼 있을 수 있다)이나
+에이전트에 먼저 로드된 다른 키가 시도돼 **등록은 됐는데도 거부되는 것처럼
+보일 수 있다.** 방금 만든 키가 맞는지 반드시 `-i` 로 못박아 확인한다.
 
 ---
 
@@ -95,3 +100,8 @@ ssh -o BatchMode=yes <user>@<VM IP> true && echo OK
 - 실습 키를 public 리포에 올리는 경우, `--restrict-cidr` 를 걸어도 리포 자체의
   노출(다른 실습·프로젝트로 키 재사용 등)까지 막지는 못한다. 키는 이 노드 묶음
   전용으로 두고 실습 종료 시 폐기한다.
+- **(실측) `~/.ssh/config` 에 이 노드를 겨냥한 예전 `IdentityFile`/
+  `IdentitiesOnly yes` 항목이 이미 있으면, 방금 등록한 새 키를 지정 없이 테스트
+  했을 때 "등록됐는데도 거부"로 보이는 혼동이 생긴다. 원인은 등록 실패가 아니라
+  ssh 가 config 에 박힌 예전 키만 시도한 것 — 위 「검증」처럼 항상 `-i` 로
+  못박아 테스트한다.
