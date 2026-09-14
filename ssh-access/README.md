@@ -17,8 +17,7 @@ install/ssh-access/
 ├── 00-ssh-server.md / .sh   노드 로컬: sshd 설치·소켓 활성화 해제·ufw·인증 정책
 ├── 01-ssh-keys.md   / .sh   노드 로컬: 공개키를 authorized_keys 에 등록
 ├── 02-ssh-client.md / .sh   macOS: 호스트 키 지문 대조·known_hosts·config·접속 검증
-│
-├── issue-key.sh             (번호 없음, 유틸) Mac: 00~02 를 한 번에 — 키 발급+등록+검증
+├── 03-issue-key.md  / .sh   macOS: 부트스트랩 이후 추가 키 발급 — 발급+등록+검증 한 번에
 │
 └── controls.md              고정한 통제·대조 상수·잔여 위험 색인
 ```
@@ -30,7 +29,7 @@ install/ssh-access/
 | [`00-ssh-server.md`](00-ssh-server.md) / [`.sh`](00-ssh-server.sh) | sshd·ufw·인증 정책 (누가 어떻게 인증할 수 있는가) | 대상 노드 (로컬) |
 | [`01-ssh-keys.md`](01-ssh-keys.md) / [`.sh`](01-ssh-keys.sh) | 공개키 등록 (이 키를 신뢰한다) | 대상 노드 (로컬) |
 | [`02-ssh-client.md`](02-ssh-client.md) / [`.sh`](02-ssh-client.sh) | 지문 대조·known_hosts·config·접속 검증 | macOS 클라이언트 |
-| [`issue-key.sh`](01-ssh-keys.md#aws-스타일-키-발급--issue-keysh) | 새 키 발급 → 원격 등록(`01-ssh-keys.sh` 재사용) → 새 키 단독 검증을 한 번에. **부트스트랩 자격증명 필요** — 최초 1회는 아니다 | macOS 클라이언트 |
+| [`03-issue-key.md`](03-issue-key.md) / [`.sh`](03-issue-key.sh) | 새 키 발급 → 원격 등록(`01-ssh-keys.sh` 재사용) → 새 키 단독 검증을 한 번에. **부트스트랩 자격증명 필요** — 최초 1회는 아니다 | macOS 클라이언트 |
 | [`controls.md`](controls.md) | 통제 원칙·대조 상수·잔여 위험 색인 | (참조) |
 
 `00`(정책)과 `01`(키)을 분리한 이유: 정책은 노드마다 한 번 고정되지만 키는
@@ -55,8 +54,10 @@ install/ssh-access/
 | 00 | 대상 노드 (콘솔/로컬) | [00-ssh-server.md](00-ssh-server.md) |
 | 01 | 대상 노드 (콘솔/로컬) | [01-ssh-keys.md](01-ssh-keys.md) |
 | 02 | macOS 클라이언트 | [02-ssh-client.md](02-ssh-client.md) |
+| 03 | macOS 클라이언트 (00~02 로 부트스트랩 완료 후, 추가 키 발급 시에만) | [03-issue-key.md](03-issue-key.md) |
 
-재확인은 각 스크립트의 `--verify-only`.
+재확인은 각 스크립트의 `--verify-only`. `03`은 매 노드마다 밟는 필수 단계가
+아니다 — `00`→`01`→`02` 로 최초 신뢰가 선 뒤 반복 발급이 필요할 때만 쓴다.
 
 ## 스크립트 분리 기준
 

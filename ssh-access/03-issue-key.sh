@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# issue-key.sh — "AWS EC2 에서 .pem 받기"와 같은 경험을 로컬 랩에서 재현한다.
+# 03-issue-key.sh — "AWS EC2 에서 .pem 받기"와 같은 경험을 로컬 랩에서 재현한다.
 # Mac 에서 실행해 새 키페어를 만들고, 이미 동작하는 자격증명으로 노드에
 # authorized_keys 등록까지 자동으로 끝낸 뒤 접속 명령을 출력한다.
-# 근거·전제·잔여 위험은 01-ssh-keys.md 「AWS 스타일 키 발급」 절에 있다.
+# 근거·전제·잔여 위험은 03-issue-key.md 에 있다.
 # 실행 위치: macOS (10.10.10.1)
 #
 # EC2 와의 구조적 차이 — 반드시 읽는다:
@@ -27,7 +27,7 @@ OUTDIR="${HOME}/.ssh/issued"
 
 usage() {
   cat <<'USAGE'
-사용법: ./issue-key.sh [옵션]
+사용법: ./03-issue-key.sh [옵션]
 
   --host <ip>            대상 노드 (기본: 10.10.10.150)
   --user <name>          원격 계정 (기본: groom)
