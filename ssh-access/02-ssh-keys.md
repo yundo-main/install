@@ -24,8 +24,9 @@
 **노드에서:**
 ```bash
 bash 02-ssh-keys.sh --authorized-key-file ~/lab_groom.pub
-
-# LAN 격리 대역 밖에서는 이 키를 무효화 (권장 — 특히 개인키를 git 에 둔 경우)
+```
+LAN 격리 대역 밖에서는 이 키를 무효화 (권장 — 특히 개인키를 git 에 둔 경우)
+```bash
 bash 02-ssh-keys.sh --authorized-key-file ~/lab_groom.pub --restrict-cidr 10.10.10.0/24
 ```
 

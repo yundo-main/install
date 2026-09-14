@@ -220,17 +220,34 @@ Host ub24 10.10.10.150
 
 ### 5-3. 접속 방법
 
+**5-2 의 `~/.ssh/config` 별칭을 만들지 않았다면** (또는 `~/.ssh/config` 에 이
+호스트용 다른 `IdentityFile` 이 이미 있다면), 매번 `-i`/`-o IdentitiesOnly=yes`
+로 키를 못박아야 한다 — 안 그러면 config 의 예전 키나 에이전트의 다른 키가
+먼저 시도돼 실패한다:
+
+```bash
+ssh -o IdentitiesOnly=yes -i ~/.ssh/lab_groom groom@10.10.10.150                      # 기본 접속
+ssh -o IdentitiesOnly=yes -i ~/.ssh/lab_groom groom@10.10.10.150 'systemctl status ssh'  # 원격 명령
+ssh -t -o IdentitiesOnly=yes -i ~/.ssh/lab_groom groom@10.10.10.150 'sudo whoami'      # sudo 는 -t 필수
+scp -o IdentitiesOnly=yes -i ~/.ssh/lab_groom ./파일 groom@10.10.10.150:~/            # 파일 전송
+ssh -o IdentitiesOnly=yes -i ~/.ssh/lab_groom -L 8080:localhost:8080 groom@10.10.10.150  # 포트 포워딩
+```
+
+**5-2 의 별칭을 만들었다면** (그 안에 `IdentityFile ~/.ssh/lab_groom` 을 이미
+지정했으므로) 매번 `-i` 를 안 붙여도 된다:
+
 ```bash
 ssh ub24                                        # 기본 접속 (config 별칭)
-ssh groom@10.10.10.150 'systemctl status ssh'   # 원격 명령
-ssh -t groom@10.10.10.150 'sudo whoami'         # sudo 는 -t 필수
-scp ./파일 groom@10.10.10.150:~/                # 파일 전송
-ssh -L 8080:localhost:8080 groom@10.10.10.150   # 포트 포워딩
+ssh ub24 'systemctl status ssh'                 # 원격 명령
+ssh -t ub24 'sudo whoami'                       # sudo 는 -t 필수
+scp ./파일 ub24:~/                              # 파일 전송
+ssh -L 8080:localhost:8080 ub24                 # 포트 포워딩
 ```
 
 연결 진단:
 ```bash
-ssh -v ub24 true 2>&1 | grep "Authentications that can continue"
+ssh -v -o IdentitiesOnly=yes -i ~/.ssh/lab_groom groom@10.10.10.150 true \
+  2>&1 | grep "Authentications that can continue"
 ```
 실패 시 송신측/수신측, TCP 계층, SSH 인증 계층을 순서대로 좁힌다 —
 [../network-troubleshooting.md](../network-troubleshooting.md).
