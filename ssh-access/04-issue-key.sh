@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# 03-issue-key.sh — "AWS EC2 에서 .pem 받기"와 같은 경험을 로컬 랩에서 재현한다.
+# 04-issue-key.sh — "AWS EC2 에서 .pem 받기"와 같은 경험을 로컬 랩에서 재현한다.
 # Mac 에서 실행해 새 키페어를 만들고, 이미 동작하는 자격증명으로 노드에
 # authorized_keys 등록까지 자동으로 끝낸 뒤 접속 명령을 출력한다.
-# 근거·전제·잔여 위험은 03-issue-key.md 에 있다.
+# 근거·전제·잔여 위험은 04-issue-key.md 에 있다.
 # 실행 위치: macOS (10.10.10.1)
 #
 # EC2 와의 구조적 차이 — 반드시 읽는다:
@@ -14,7 +14,7 @@
 #   찍어낸다. 즉 무(無)에서 부팅하는 게 아니라 기존 신뢰를 증폭한다 — 겉보기
 #   경험은 같아도 신뢰 모델은 다르다.
 #
-# 역할: 실행 도구. 01-ssh-keys.sh 의 authorized_keys 등록 로직을 그대로
+# 역할: 실행 도구. 02-ssh-keys.sh 의 authorized_keys 등록 로직을 그대로
 #       재사용한다(중복 구현하지 않는다) — 원격으로 그 스크립트를 옮겨 실행한다.
 #
 set -euo pipefail
@@ -27,18 +27,18 @@ OUTDIR="${HOME}/.ssh/issued"
 
 usage() {
   cat <<'USAGE'
-사용법: ./03-issue-key.sh [옵션]
+사용법: ./04-issue-key.sh [옵션]
 
   --host <ip>            대상 노드 (기본: 10.10.10.150)
   --user <name>          원격 계정 (기본: groom)
   --name <label>         키 이름/코멘트 (기본: <user>-<host 마지막 옥텟>-<타임스탬프>)
-  --restrict-cidr <cidr> 원격 01-ssh-keys.sh 에 전달 — authorized_keys 의 from= 제한
+  --restrict-cidr <cidr> 원격 02-ssh-keys.sh 에 전달 — authorized_keys 의 from= 제한
   --outdir <dir>         발급 키 저장 위치 (기본: ~/.ssh/issued)
   -h, --help             도움말
 
 전제: --host 에 이미 접속 가능한 SSH 신원(에이전트·~/.ssh/config·기본 키)이
 있어야 한다. 이 스크립트는 새 키를 "무(無)에서" 심지 않는다 — 기존 신뢰를
-증폭할 뿐이다. 아무 신원도 없으면 게스트 콘솔에서 01-ssh-keys.sh 를 먼저 실행한다.
+증폭할 뿐이다. 아무 신원도 없으면 게스트 콘솔에서 02-ssh-keys.sh 를 먼저 실행한다.
 
 종료 코드: 0 성공 / 1 전제·검증 실패 / 2 인자 오류
 USAGE
@@ -76,7 +76,7 @@ step "0. 부트스트랩 자격증명 확인 — ${TARGET}"
 
 ssh -o BatchMode=yes -o ConnectTimeout=8 "$TARGET" true 2>/dev/null \
   || die "이미 동작하는 SSH 신원이 없다. EC2 의 cloud-init 에 해당하는 제어평면이
-       이 랩엔 없다 — 게스트 콘솔에서 01-ssh-keys.sh 를 먼저 실행하거나,
+       이 랩엔 없다 — 게스트 콘솔에서 02-ssh-keys.sh 를 먼저 실행하거나,
        기존에 등록된 키가 ~/.ssh/config·에이전트로 잡히는지 확인한다."
 ok "부트스트랩 신원으로 ${TARGET} 접속 확인"
 
@@ -93,21 +93,21 @@ ssh-keygen -q -t rsa -b 2048 -m PEM -f "$KEYFILE" -N '' -C "$KEY_NAME" \
 chmod 400 "$KEYFILE"
 ok "생성 완료, 권한 400"
 
-# ── 2. authorized_keys 원격 등록 (01-ssh-keys.sh 재사용) ─────────────────────
+# ── 2. authorized_keys 원격 등록 (02-ssh-keys.sh 재사용) ─────────────────────
 step "2. 노드에 공개키 등록"
 
 REMOTE_TMP="/tmp/issue-key.$$"
 ssh "$TARGET" "install -d -m 700 '$REMOTE_TMP'" || die "원격 임시 디렉터리 생성 실패"
-scp -q "${SCRIPT_DIR}/01-ssh-keys.sh" "${TARGET}:${REMOTE_TMP}/01-ssh-keys.sh" \
-  || die "01-ssh-keys.sh 전송 실패"
+scp -q "${SCRIPT_DIR}/02-ssh-keys.sh" "${TARGET}:${REMOTE_TMP}/02-ssh-keys.sh" \
+  || die "02-ssh-keys.sh 전송 실패"
 scp -q "${KEYFILE}.pub" "${TARGET}:${REMOTE_TMP}/${KEY_NAME}.pub" \
   || die "공개키 전송 실패"
 
-REMOTE_CMD="bash '${REMOTE_TMP}/01-ssh-keys.sh' --authorized-key-file '${REMOTE_TMP}/${KEY_NAME}.pub'"
+REMOTE_CMD="bash '${REMOTE_TMP}/02-ssh-keys.sh' --authorized-key-file '${REMOTE_TMP}/${KEY_NAME}.pub'"
 [[ -n "$RESTRICT_CIDR" ]] && REMOTE_CMD+=" --restrict-cidr '${RESTRICT_CIDR}'"
 REMOTE_CMD+="; rc=\$?; rm -rf '${REMOTE_TMP}'; exit \$rc"
 
-ssh "$TARGET" "$REMOTE_CMD" || die "원격 등록 실패 (01-ssh-keys.sh 출력 참조)"
+ssh "$TARGET" "$REMOTE_CMD" || die "원격 등록 실패 (02-ssh-keys.sh 출력 참조)"
 ok "authorized_keys 등록 완료"
 
 # ── 3. 새 키 단독 검증 ────────────────────────────────────────────────────────
@@ -140,7 +140,7 @@ cat <<'RESIDUAL'
       침해를 물려받는다.
     - 발급한 개인키(.pem)는 이 스크립트가 유일하게 아는 사본이다. 백업·회전
       절차는 별도로 정한다. 폐기하려면 노드의 authorized_keys 에서 해당 줄을
-      직접 지운다 (01-ssh-keys.md 참조 — 이 스크립트는 폐기를 하지 않는다).
+      직접 지운다 (02-ssh-keys.md 참조 — 이 스크립트는 폐기를 하지 않는다).
     - RSA 2048 PEM 은 AWS 콘솔 키와 형태를 맞추기 위한 선택이다. 신규 발급
       기본값으로는 ed25519 가 낫다 — 데모 목적이 아니면 -t ed25519 로 바꾼다.
     - --restrict-cidr 를 주지 않으면 이 키는 무제한이다. 실습 키를 배포·보관할

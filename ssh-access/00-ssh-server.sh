@@ -16,7 +16,7 @@
 #   - 멱등: 재실행해도 상태가 수렴한다. 드롭인(60-auth-policy.conf) 과 ufw 규칙
 #     (주석 태그로 식별) 을 이 스크립트가 소유·관리한다.
 #
-# 관계: 01-ssh-keys.sh 는 authorized_keys 배치(키 등록)를 담당한다. 02-ssh-client.sh
+# 관계: 02-ssh-keys.sh 는 authorized_keys 배치(키 등록)를 담당한다. 03-ssh-client.sh
 #       는 클라이언트 측(호스트 키 지문 대조, known_hosts, ~/.ssh/config, 무암호
 #       접속 검증)을 담당한다. sshd 인증 정책은 SSH 위 원격 sudo 로 바꾸지 않고
 #       이 스크립트가 게스트에서 로컬로 관리한다.
@@ -60,7 +60,7 @@ usage() {
   --verify-only                설치·변경 없이 유효 설정만 검증한다
   -h, --help                   도움말
 
-공개키 등록(authorized_keys)은 이 스크립트가 아니라 01-ssh-keys.sh 가 한다.
+공개키 등록(authorized_keys)은 이 스크립트가 아니라 02-ssh-keys.sh 가 한다.
 
 종료 코드: 0 성공 / 1 검증·적용 실패 / 2 인자 오류
 USAGE
@@ -322,7 +322,7 @@ cat <<NEXT
   기록할 것 — 클라이언트 known_hosts 대조용 호스트 키 지문:
 $(ssh-keygen -lf "$HOST_KEY_PUB" 2>/dev/null | sed 's/^/    /')
 
-  다음: 01-ssh-keys.sh 로 공개키를 authorized_keys 에 등록한다 (아직 배치 전이면
+  다음: 02-ssh-keys.sh 로 공개키를 authorized_keys 에 등록한다 (아직 배치 전이면
         --password-auth lan 없이는 이 노드에 로그인할 수단이 없다).
 
   등록 후 클라이언트(Mac)에서:

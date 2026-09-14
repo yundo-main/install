@@ -1,17 +1,17 @@
-# 03 · AWS 스타일 키 발급 — `03-issue-key.sh`
+# 04 · AWS 스타일 키 발급 — `04-issue-key.sh`
 
 **요약.** Mac 에서 실행해 새 키페어(PEM)를 발급하고, 이미 동작하는 SSH 자격증명으로
-대상 노드의 `01-ssh-keys.sh` 를 원격 호출해 등록한 뒤 새 키 단독 접속까지 검증한다.
+대상 노드의 `02-ssh-keys.sh` 를 원격 호출해 등록한 뒤 새 키 단독 접속까지 검증한다.
 AWS 콘솔에서 "키 페어 생성"을 누르고 `.pem` 을 받아 바로 `ssh -i` 로 붙는 경험을
 재현한다. **부트스트랩 자격증명 필요** — 최초 1회는 아니다.
 
-> **역할: 단계 문서(지름길 유틸).** `00`→`01`→`02` 정규 경로를 대체하지 않는다.
-> 이미 그 경로로 최초 신뢰가 선 뒤, 추가 키를 발급할 때 쓰는 지름길이다. 실행
-> 도구는 [`03-issue-key.sh`](03-issue-key.sh). `01-ssh-keys.sh` 의 등록 로직을
-> 그대로 재사용한다(중복 구현하지 않는다). 최초 부트스트랩은
-> [00-ssh-server.md](00-ssh-server.md)→콘솔에서 실행하는
-> [01-ssh-keys.md](01-ssh-keys.md) 경로로만 가능하다. 클라이언트 측 지문 대조는
-> [02-ssh-client.md](02-ssh-client.md).
+> **역할: 단계 문서(지름길 유틸).** `00`→`01`→`02`→`03` 정규 경로를 대체하지
+> 않는다. 이미 그 경로로 최초 신뢰가 선 뒤, 추가 키를 발급할 때 쓰는 지름길이다.
+> 실행 도구는 [`04-issue-key.sh`](04-issue-key.sh). `02-ssh-keys.sh` 의 등록
+> 로직을 그대로 재사용한다(중복 구현하지 않는다). 최초 부트스트랩은
+> [00-ssh-server.md](00-ssh-server.md)→[01-key-generation.md](01-key-generation.md)(Mac)
+> →콘솔에서 실행하는 [02-ssh-keys.md](02-ssh-keys.md) 경로로만 가능하다.
+> 클라이언트 측 지문 대조는 [03-ssh-client.md](03-ssh-client.md).
 
 | 항목 | 값 |
 |---|---|
@@ -25,25 +25,26 @@ AWS 콘솔에서 "키 페어 생성"을 누르고 `.pem` 을 받아 바로 `ssh 
 
 | | EC2 | 이 스크립트 |
 |---|---|---|
-| 키를 심는 주체 | 클라우드 제어평면(cloud-init), 인스턴스 최초 부팅 시 | `03-issue-key.sh` 자신, SSH 로 |
+| 키를 심는 주체 | 클라우드 제어평면(cloud-init), 인스턴스 최초 부팅 시 | `04-issue-key.sh` 자신, SSH 로 |
 | 필요한 사전 접근 | **없음** — 제어평면이 부팅 시점에 처리 | **있음** — `--host` 에 이미 통하는 SSH 신원 하나 |
-| 신뢰의 출처 | 클라우드 제공자의 제어평면 | 기존에 이미 등록된 다른 키(또는 콘솔에서 실행한 `01-ssh-keys.sh`) |
+| 신뢰의 출처 | 클라우드 제공자의 제어평면 | 기존에 이미 등록된 다른 키(또는 콘솔에서 실행한 `02-ssh-keys.sh`) |
 
 이 랩에는 클라우드 제어평면이 없는 베어 VM 이라 **무(無)에서 키를 심을 방법이
-없다.** `03-issue-key.sh` 는 "새 키를 만들어 심는" 겉모습은 EC2 와 같지만, 실제로는
+없다.** `04-issue-key.sh` 는 "새 키를 만들어 심는" 겉모습은 EC2 와 같지만, 실제로는
 **이미 있는 신뢰를 증폭**한다 — 그 기존 신원이 침해돼 있으면 새로 발급한 키도
 그 침해를 물려받는다. 처음 신뢰를 심는 최초 1회는 여전히
-[00-ssh-server.md](00-ssh-server.md)→콘솔에서 실행하는 `01-ssh-keys.sh` 경로뿐이다.
+[00-ssh-server.md](00-ssh-server.md)→[01-key-generation.md](01-key-generation.md)
+→콘솔에서 실행하는 `02-ssh-keys.sh` 경로뿐이다.
 
 ---
 
 ## 실행
 
 ```bash
-./03-issue-key.sh --host 10.10.10.150 --user groom
+./04-issue-key.sh --host 10.10.10.150 --user groom
 
 # 발급 키를 LAN 대역으로 제한(실습 키를 보관·공유할 계획이면 권장)
-./03-issue-key.sh --host 10.10.10.150 --user groom --restrict-cidr 10.10.10.0/24
+./04-issue-key.sh --host 10.10.10.150 --user groom --restrict-cidr 10.10.10.0/24
 ```
 
 ### 옵션
@@ -52,7 +53,7 @@ AWS 콘솔에서 "키 페어 생성"을 누르고 `.pem` 을 받아 바로 `ssh 
 |---|---|
 | `--host <ip>` / `--user <name>` | 대상·계정 (기본 `10.10.10.150` / `groom`) |
 | `--name <label>` | 키 이름/코멘트 (기본 `<user>-<host 마지막 옥텟>-<타임스탬프>`) |
-| `--restrict-cidr <cidr>` | 원격 `01-ssh-keys.sh` 에 전달 — `authorized_keys` 의 `from=` 제한 |
+| `--restrict-cidr <cidr>` | 원격 `02-ssh-keys.sh` 에 전달 — `authorized_keys` 의 `from=` 제한 |
 | `--outdir <dir>` | 발급 키 저장 위치 (기본 `~/.ssh/issued`) |
 
 ### 하는 일
@@ -61,7 +62,7 @@ AWS 콘솔에서 "키 페어 생성"을 누르고 `.pem` 을 받아 바로 `ssh 
    중단한다 (허공에서 키를 심지 않는다).
 2. **키페어 발급** — `ssh-keygen -t rsa -b 2048 -m PEM` 으로 AWS `.pem` 과 같은
    `-----BEGIN RSA PRIVATE KEY-----` 형식을 만든다. 즉시 `chmod 400`.
-3. **원격 등록** — `01-ssh-keys.sh` 를 그대로 노드로 옮겨 실행한다(로직을
+3. **원격 등록** — `02-ssh-keys.sh` 를 그대로 노드로 옮겨 실행한다(로직을
    중복 구현하지 않는다). 끝나면 노드의 임시 파일을 지운다.
 4. **새 키 단독 검증** — `-o IdentitiesOnly=yes` 로 기존 신원을 배제하고 **오직
    새 키만으로** 접속을 확인한다. 등록됐다고 주장만 하지 않는다.

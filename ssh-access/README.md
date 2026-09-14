@@ -11,14 +11,15 @@ VM 노드에 SSH 키 기반 접속을 구성하는 절차와 실행 도구. Ubun
 
 ```
 install/ssh-access/
-├── README.md              ← 현재 문서 — 인덱스·실행 순서·명명 규칙
+├── README.md                  ← 현재 문서 — 인덱스·실행 순서·명명 규칙
 │
-├── 00-ssh-server.md / .sh   노드 로컬: sshd 설치·소켓 활성화 해제·ufw·인증 정책
-├── 01-ssh-keys.md   / .sh   노드 로컬: 공개키를 authorized_keys 에 등록
-├── 02-ssh-client.md / .sh   macOS: 호스트 키 지문 대조·known_hosts·config·접속 검증
-├── 03-issue-key.md  / .sh   macOS: 부트스트랩 이후 추가 키 발급 — 발급+등록+검증 한 번에
+├── 00-ssh-server.md / .sh      노드 로컬: sshd 설치·소켓 활성화 해제·ufw·인증 정책
+├── 01-key-generation.md / .sh  macOS: 노드 접속용 SSH 키페어 생성
+├── 02-ssh-keys.md   / .sh      노드 로컬: 공개키를 authorized_keys 에 등록
+├── 03-ssh-client.md / .sh      macOS: 호스트 키 지문 대조·known_hosts·config·접속 검증
+├── 04-issue-key.md  / .sh      macOS: 부트스트랩 이후 추가 키 발급 — 발급+등록+검증 한 번에
 │
-└── controls.md              고정한 통제·대조 상수·잔여 위험 색인
+└── controls.md                 고정한 통제·대조 상수·잔여 위험 색인
 ```
 
 ## 파일 역할
@@ -26,14 +27,16 @@ install/ssh-access/
 | 파일 | 역할 | 실행 위치 |
 |---|---|---|
 | [`00-ssh-server.md`](00-ssh-server.md) / [`.sh`](00-ssh-server.sh) | sshd·ufw·인증 정책 (누가 어떻게 인증할 수 있는가) | 대상 노드 (로컬) |
-| [`01-ssh-keys.md`](01-ssh-keys.md) / [`.sh`](01-ssh-keys.sh) | 공개키 등록 (이 키를 신뢰한다) | 대상 노드 (로컬) |
-| [`02-ssh-client.md`](02-ssh-client.md) / [`.sh`](02-ssh-client.sh) | 지문 대조·known_hosts·config·접속 검증 | macOS 클라이언트 |
-| [`03-issue-key.md`](03-issue-key.md) / [`.sh`](03-issue-key.sh) | 새 키 발급 → 원격 등록(`01-ssh-keys.sh` 재사용) → 새 키 단독 검증을 한 번에. **부트스트랩 자격증명 필요** — 최초 1회는 아니다 | macOS 클라이언트 |
+| [`01-key-generation.md`](01-key-generation.md) / [`.sh`](01-key-generation.sh) | SSH 키페어 생성 (개인키는 Mac 을 벗어나지 않는다) | macOS 클라이언트 |
+| [`02-ssh-keys.md`](02-ssh-keys.md) / [`.sh`](02-ssh-keys.sh) | 공개키 등록 (이 키를 신뢰한다) | 대상 노드 (로컬) |
+| [`03-ssh-client.md`](03-ssh-client.md) / [`.sh`](03-ssh-client.sh) | 지문 대조·known_hosts·config·접속 검증 | macOS 클라이언트 |
+| [`04-issue-key.md`](04-issue-key.md) / [`.sh`](04-issue-key.sh) | 새 키 발급 → 원격 등록(`02-ssh-keys.sh` 재사용) → 새 키 단독 검증을 한 번에. **부트스트랩 자격증명 필요** — 최초 1회는 아니다 | macOS 클라이언트 |
 | [`controls.md`](controls.md) | 통제 원칙·대조 상수·잔여 위험 색인 | (참조) |
 
-`00`(정책)과 `01`(키)을 분리한 이유: 정책은 노드마다 한 번 고정되지만 키는
+`00`(정책)과 `02`(키 등록)을 분리한 이유: 정책은 노드마다 한 번 고정되지만 키는
 회전·추가·폐기가 그보다 잦다. 방화벽·소켓 설정을 다시 건드리지 않고 키만 갱신할
-수 있어야 한다.
+수 있어야 한다. `01`(키 생성)을 `02`(키 등록)와 분리한 이유는 신뢰 경계가
+다르기 때문이다 — 아래 「스크립트 분리 기준」 참조.
 
 ## 명명 규칙
 
@@ -51,19 +54,21 @@ install/ssh-access/
 | # | 실행 위치 | 문서 |
 |---|---|---|
 | 00 | 대상 노드 (콘솔/로컬) | [00-ssh-server.md](00-ssh-server.md) |
-| 01 | 대상 노드 (콘솔/로컬) | [01-ssh-keys.md](01-ssh-keys.md) |
-| 02 | macOS 클라이언트 | [02-ssh-client.md](02-ssh-client.md) |
-| 03 | macOS 클라이언트 (00~02 로 부트스트랩 완료 후, 추가 키 발급 시에만) | [03-issue-key.md](03-issue-key.md) |
+| 01 | macOS 클라이언트 | [01-key-generation.md](01-key-generation.md) |
+| 02 | 대상 노드 (콘솔/로컬) | [02-ssh-keys.md](02-ssh-keys.md) |
+| 03 | macOS 클라이언트 | [03-ssh-client.md](03-ssh-client.md) |
+| 04 | macOS 클라이언트 (00~03 으로 부트스트랩 완료 후, 추가 키 발급 시에만) | [04-issue-key.md](04-issue-key.md) |
 
-재확인은 각 스크립트의 `--verify-only`. `03`은 매 노드마다 밟는 필수 단계가
-아니다 — `00`→`01`→`02` 로 최초 신뢰가 선 뒤 반복 발급이 필요할 때만 쓴다.
+재확인은 각 스크립트의 `--verify-only`. `04`는 매 노드마다 밟는 필수 단계가
+아니다 — `00`→`01`→`02`→`03` 으로 최초 신뢰가 선 뒤 반복 발급이 필요할 때만 쓴다.
 
 ## 스크립트 분리 기준
 
-**실행 주체의 신뢰 경계가 다르면 파일을 나눈다.** `00`·`01`(노드 로컬)과
-`02`(클라이언트)를 한 파일에 두지 않는다. 노드로 전송되는 스크립트(`00`, `01`)는
-클라이언트 로직을 포함하지 않고, 외부 파일을 참조하지 않는 자기완결 스크립트여야
-한다.
+**실행 주체의 신뢰 경계가 다르면 파일을 나눈다.** 노드 로컬(`00`, `02`)과
+macOS 클라이언트(`01`, `03`, `04`)를 한 파일에 두지 않는다. 노드로 전송되는
+스크립트(`00`, `02`)는 클라이언트 로직을 포함하지 않고, 외부 파일을 참조하지
+않는 자기완결 스크립트여야 한다. `01`(키 생성)과 `02`(키 등록)도 이 기준으로
+나뉜다 — 개인키는 `01`을 실행한 Mac 을 벗어나지 않고, `02`는 공개키만 받는다.
 
 ## 이 절차를 마친 뒤
 

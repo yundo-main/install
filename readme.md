@@ -114,13 +114,14 @@ README.md  →  단계 문서·주제 문서          (인덱스, 역참조 없�
 
 | 디렉터리 | README.md | 단계 문서 `NN-*.md` | 주제 문서 | 스크립트 |
 |---|---|---|---|---|
-| [ssh-access/](ssh-access/) | O | O (00–02) | `controls.md` | 00–01 |
+| [ssh-access/](ssh-access/) | O | O (00–04) | `controls.md` | 00, 02 |
 | [docker/](docker/) | O | O (00–02) | `compose-authoring.md`, `controls.md` | 00–01 |
 | [k8s/](k8s/) | — | `plan.md` (구 구조) | — | — |
 
-`ssh-access/` 의 스크립트는 2개다 — `00-ssh-server.sh`(노드 로컬: sshd·방화벽·
-인증 정책), `01-ssh-keys.sh`(노드 로컬: authorized_keys 등록). `02-ssh-client.sh`
-는 macOS 클라이언트에서 실행하는 검증 도구다.
+`ssh-access/` 의 노드 로컬(자기완결) 스크립트는 2개다 — `00-ssh-server.sh`
+(sshd·방화벽·인증 정책), `02-ssh-keys.sh`(authorized_keys 등록). 나머지는 macOS
+클라이언트에서 실행하는 도구다 — `01-key-generation.sh`(키 생성),
+`03-ssh-client.sh`(접속 검증), `04-issue-key.sh`(반복 발급 지름길, 부트스트랩 후).
 
 `docker/` 의 스크립트는 2개다 — `00-docker-ce.sh`(Docker CE), `01-compose.sh`
 (Compose). Swarm 구성은 `sudo` 비밀번호와 지문 육안 대조를 요구해 스크립트화하지
