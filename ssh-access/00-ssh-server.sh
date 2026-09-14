@@ -331,7 +331,6 @@ $(ssh-keygen -lf "$HOST_KEY_PUB" 2>/dev/null | sed 's/^/    /')
     ── 클라이언트가 22/tcp 허용 대역(${SSH_FROM}) 밖이면 방화벽에서 차단된다.
 
   방화벽 상태:  sudo ufw status verbose
-  Docker 설치는 ../docker/00-docker-ce.sh (SSH 접속 구성 완료 후).
 NEXT
 
 cat <<'RESIDUAL'
@@ -344,10 +343,6 @@ cat <<'RESIDUAL'
       비 LAN 경로가 생겨도 그 경로에는 22/tcp·비밀번호가 노출되지 않는다 (의도된 동작).
     - 비밀번호 인증이 유효하려면 해당 계정에 강한 암호가 설정돼 있어야 한다.
       암호 미설정(NP)·약한 암호에서는 이 정책이 순손실이다.
-    - ufw 는 호스트 자신의 인바운드만 통제한다. 이후 ../docker/00-docker-ce.sh 로
-      Docker 를 설치하면 -p 로 게시한 컨테이너 포트는 ufw 를 우회한다 (Docker 가 nat/DOCKER
-      체인에 직접 규칙을 삽입, ufw FORWARD 평가보다 먼저). 컨테이너 포트는
-      127.0.0.1 바인딩 또는 DOCKER-USER 체인으로 별도 통제한다.
     - ufw 규칙은 --ssh-from 의 주소군만 처리한다. sshd 가 IPv6(::)로도 리슨하면
       v6 경로는 default deny 로 차단된다. vmnet 격리 구성에서는 의도에 부합한다.
     - --firewall none 은 방화벽을 건드리지 않는다. nftables 를 직접 운용하는

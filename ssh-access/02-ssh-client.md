@@ -90,7 +90,7 @@ ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
    (SSH·비밀번호가 이미 되는 경우의 대안 경로). 노드에서
    [01-ssh-keys.md](01-ssh-keys.md) 로 이미 배치했다면 이 단계는 자동으로 건너뛴다.
 4. **검증** — `ssh -o PasswordAuthentication=no -o BatchMode=yes ... 'id'` 성공,
-   출력에 `(sudo)` 포함 확인 (없으면 서버 측 Docker 스크립트가 실패한다).
+   출력에 `(sudo)` 포함 확인 (없으면 원격 sudo 가 필요한 후속 작업이 실패한다).
 5. **비밀번호 인증 상태** — 데몬이 광고하는 인증 수단을 출력. `--disable-password`
    지정 시 원격으로 차단하고 재검증.
 
@@ -115,15 +115,12 @@ Host ub24 10.10.10.150 10.10.10.151 10.10.10.152
 
 ```bash
 ssh ub24                                    # 기본 접속
-ssh groom@10.10.10.150 'docker ps'          # 원격 명령
-ssh -t groom@10.10.10.150 'sudo systemctl status docker'   # sudo 는 -t 필수
+ssh groom@10.10.10.150 'systemctl status ssh'   # 원격 명령
+ssh -t groom@10.10.10.150 'sudo whoami'     # sudo 는 -t 필수
 scp ./파일 groom@10.10.10.150:~/            # 파일 전송
 rsync -av ./dir/ groom@10.10.10.150:~/dir/
-ssh -L 8080:localhost:8080 groom@10.10.10.150   # 포트 포워딩 — 컨테이너 접근
+ssh -L 8080:localhost:8080 groom@10.10.10.150   # 포트 포워딩
 ```
-
-컨테이너는 `-p 127.0.0.1:8080:8080` 으로 띄우고 위 포워딩으로 접근한다. 게스트
-포트를 네트워크에 노출하지 않는다.
 
 ### 연결 진단
 
@@ -143,16 +140,6 @@ debug1: Authentications that can continue: publickey
 
 ---
 
-## 다음 단계
-
-```bash
-scp ../docker/00-docker-ce.sh ../docker/01-compose.sh groom@10.10.10.150:~/
-ssh -t groom@10.10.10.150 'bash ~/00-docker-ce.sh'
-ssh -t groom@10.10.10.150 'bash ~/01-compose.sh'   # Compose 가 필요한 경우
-```
-
----
-
 ## 잔여 위험 / 전제
 
 - `~/.ssh/id_rsa` 는 파일명과 달리 ED25519 키일 수 있다 (실측: comment `jarrod@macbok2`).
@@ -160,8 +147,5 @@ ssh -t groom@10.10.10.150 'bash ~/01-compose.sh'   # Compose 가 필요한 경�
   확인한다.
 - `--disable-password`(이 스크립트) 와 `00-ssh-server.sh --password-auth`(00) 는
   같은 드롭인 영역을 다룬다. 한 경로만 쓴다. 콘솔 접근이 되면 00 을 기준으로 한다.
-- 복제 VM 은 호스트 키 지문이 동일해 `known_hosts` 로 노드를 구별하지 못한다.
-  [../docker/02-swarm-cluster.md](../docker/02-swarm-cluster.md) 1-4·3-1 절에서
-  신원을 분리한 뒤 재대조한다.
 - 지문을 대조하지 않은 TOFU 등록은 MITM 을 탐지하지 못한다. `--expect-fpr` 를
   생략한 대화형 확인은 운영자의 육안 대조에 의존한다.

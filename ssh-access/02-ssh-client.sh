@@ -136,7 +136,7 @@ printf '  %s\n' "$ID_OUT"
 ok "키 단독 인증 성공"
 
 grep -q '(sudo)' <<<"$ID_OUT" \
-  || warn "$USER_NAME 이 sudo 그룹에 없다. 서버 측 Docker 설치 스크립트가 실패한다."
+  || warn "$USER_NAME 이 sudo 그룹에 없다. 원격 sudo 가 필요한 후속 작업이 실패한다."
 
 # ── 1-3. 비밀번호 인증 차단 ──────────────────────────────────────────────────
 if [[ $DISABLE_PASSWORD -eq 1 ]]; then
@@ -177,12 +177,6 @@ fi
 # ── 다음 단계 안내 ───────────────────────────────────────────────────────────
 step "완료 — 다음 단계"
 cat <<NEXT
-  서버에서 Docker 를 설치한다:
-
-    scp ${SCRIPT_DIR}/../docker/00-docker-ce.sh ${SCRIPT_DIR}/../docker/01-compose.sh ${TARGET}:~/
-    ssh -t ${TARGET} 'bash ~/00-docker-ce.sh'
-    ssh -t ${TARGET} 'bash ~/01-compose.sh'   # Compose 가 필요한 경우
-
   ~/.ssh/config 별칭 등록(선택):
 
     Host ub24

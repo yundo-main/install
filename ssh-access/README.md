@@ -1,9 +1,8 @@
 # install/ssh-access
 
 VM 노드에 SSH 키 기반 접속을 구성하는 절차와 실행 도구. Ubuntu 24.04 대상,
-클라이언트는 macOS. Docker CE 설치([../docker/](../docker/))를 포함해 이 리포의
-어떤 설치 대상이든 SSH 로 접근할 노드라면 공통으로 이 절차를 먼저 거친다 —
-Docker 전용이 아니라서 `docker/` 와 별도 디렉터리로 뒀다.
+클라이언트는 macOS. 이 리포의 어떤 설치 대상이든 SSH 로 접근할 노드라면 공통으로
+이 절차를 먼저 거친다 — 특정 설치 대상 전용이 아니라서 별도 디렉터리로 뒀다.
 
 절차를 문서로만 남기지 않고 스크립트로 고정해, 지문 대조·검증 순서·최소 권한
 기본값이 수행자의 판단에 의존하지 않도록 하는 것이 목적이다.
@@ -68,6 +67,4 @@ install/ssh-access/
 
 ## 이 절차를 마친 뒤
 
-- Docker CE 설치: [../docker/](../docker/) (`00-docker-ce.sh` 부터)
-- Swarm 클러스터: [../docker/02-swarm-cluster.md](../docker/02-swarm-cluster.md)
 - 연결 문제: [../network-troubleshooting.md](../network-troubleshooting.md)

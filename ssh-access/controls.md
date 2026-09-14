@@ -1,8 +1,7 @@
 # 설계상 고정한 통제 · 잔여 위험 색인 (SSH)
 
 > **역할: 주제 문서.** `ssh-access/` 단계에 걸쳐 반복되는 통제 원칙과 잔여 위험의
-> 색인이다. 단계별 상세는 해당 `NN-*.md` 를 본다. Docker·Swarm 통제는
-> [../docker/controls.md](../docker/controls.md).
+> 색인이다. 단계별 상세는 해당 `NN-*.md` 를 본다.
 
 ---
 
@@ -36,5 +35,4 @@
 | `wget` 스크립트 전달 = 공급망 주입 지점 | [00-ssh-server.md](00-ssh-server.md) |
 | 개인키를 git 에 두는 경우의 노출 범위 | [01-ssh-keys.md](01-ssh-keys.md) |
 | `authorized_keys` 옵션 충돌(무제한 키 잔존) 미자동 정리 | [01-ssh-keys.md](01-ssh-keys.md) |
-| 복제 VM 호스트 키 승계 | [../docker/02-swarm-cluster.md](../docker/02-swarm-cluster.md) |
 | `03-issue-key.sh` 는 신뢰를 생성하지 않고 증폭한다 — 부트스트랩 자격증명이 침해돼 있으면 신규 발급 키도 그 침해를 물려받는다 | [03-issue-key.md](03-issue-key.md) |

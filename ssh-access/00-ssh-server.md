@@ -196,10 +196,6 @@ Status: active   Default: deny (incoming), allow (outgoing)
   경로가 생겨도 그 경로에는 22/tcp·비밀번호가 노출되지 않는다 (의도된 동작).
 - 비밀번호 인증이 유효하려면 계정에 강한 암호가 있어야 한다. 미설정(`NP`)·약한
   암호에서는 이 정책이 순손실이다.
-- **ufw 는 호스트 자신의 인바운드만 통제한다.** [../docker/00-docker-ce.md](../docker/00-docker-ce.md)
-  로 Docker 를 설치하면 `-p` 게시 컨테이너 포트는 ufw 를 우회한다 (Docker 가
-  `nat`/`DOCKER` 체인에 직접 규칙 삽입, ufw `FORWARD` 평가보다 먼저). 컨테이너
-  포트는 `127.0.0.1` 바인딩 또는 `DOCKER-USER` 체인으로 별도 통제한다.
 - ufw 규칙은 `--ssh-from` 의 IPv4 주소군만 처리한다. sshd 가 `::` 로도 리슨하면
   v6 경로는 default deny 로 차단된다. vmnet 격리에서는 의도에 부합한다.
 - `--firewall none` 은 방화벽을 건드리지 않는다. nftables 직접 운용 환경에서
@@ -207,8 +203,7 @@ Status: active   Default: deny (incoming), allow (outgoing)
 - `PermitRootLogin prohibit-password` 는 root 의 암호·kbd-interactive 로그인만
   차단한다. root 키 로그인은 별도로 통제한다.
 - 호스트 키는 재생성하지 않는다. 회전이 필요하면 수동으로 수행하고 전 클라이언트
-  에서 지문을 재대조한다. 복제 VM 의 호스트 키 승계 문제는
-  [../docker/02-swarm-cluster.md](../docker/02-swarm-cluster.md) 1-4 절.
+  에서 지문을 재대조한다.
 - 인자 없이 실행하면 `authorized_keys` 는 그대로다. 이 노드에 아직 어떤 공개키도
   등록돼 있지 않다면, 이 스크립트를 실행한 콘솔 세션 자체가 유일한 접근 경로다 —
   [01-ssh-keys.md](01-ssh-keys.md) 를 이어서 실행한다.
