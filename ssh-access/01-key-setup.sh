@@ -1,21 +1,22 @@
 #!/usr/bin/env bash
 #
-# 01-key-generation.sh — Mac 에서 로컬로 실행해 노드 접속용 SSH 키페어를
-# 만든다. 근거·기대 출력·사용법은 01-key-generation.md 에 있다.
+# 01-key-setup.sh — Mac 에서 로컬로 실행해 노드 접속용 SSH 키페어를 만들고,
+# 그 .pub 을 노드로 전송한다. 근거·기대 출력·사용법은 01-key-setup.md 에 있다.
 # 실행 위치: macOS (클라이언트)
 #
 # 설계 원칙
 #   - 개인키는 이 스크립트를 실행한 Mac 을 벗어나지 않는다. 노드로 가는 것은
-#     03-ssh-keys.sh 에 넘기는 .pub(공개키) 뿐이다.
-#   - 비파괴: 대상 파일이 이미 있으면 덮어쓰지 않고 중단한다. 새 키가 필요하면
-#     --name 으로 다른 이름을 쓴다.
-#   - 기본은 무암호(-N '') 자동화 키다 — 파일 시스템 권한(600)이 유일한 방어선
-#     이라는 것을 잔여 위험에 명시한다.
+#     .pub(공개키) 뿐이다.
+#   - 비파괴: 대상 키 파일이 이미 있으면 덮어쓰지 않고 중단한다.
+#   - 전송(2단계)은 비밀번호 인증이 이미 켜져 있어야 동작한다
+#     (00-ssh-server.md 의 PasswordAuthentication yes/lan 설정). 꺼져 있으면
+#     scp 자체가 안 되므로 --skip-transfer 로 생성까지만 하고, 전송은
+#     00-ssh-server.md 의 콘솔 붙여넣기 절차를 수동으로 따른다.
+#   - 등록(authorized_keys 반영)은 이 스크립트의 범위 밖이다 — 02-ssh-keys.sh
+#     가 노드에서 직접 한다. 전송과 등록을 분리해, "개인키가 어디까지 갔는지"와
+#     "누가 노드를 신뢰하는지"를 한 스크립트에 섞지 않는다.
 #
-# 관계: 여기서 만든 .pub 을 02-key-transfer.md(스크립트 없음)로 노드에 옮기고
-#       03-ssh-keys.sh(노드 로컬)로 등록한다.
-#
-# 역할: 실행 도구. 절차의 근거·기대 출력·사용법은 01-key-generation.md 에 있다.
+# 역할: 실행 도구. 절차의 근거·기대 출력·사용법은 01-key-setup.md 에 있다.
 #       여기에 절차 설명을 복제하지 않는다. 코드가 문서와 어긋나면 문서가 기준이다.
 #
 set -euo pipefail
@@ -24,23 +25,30 @@ KEY_NAME="lab_groom"
 OUTDIR="${HOME}/.ssh"
 KEY_TYPE="ed25519"
 COMMENT=""
+HOST="10.10.10.150"
+USER_NAME="groom"
+SKIP_TRANSFER=0
 VERIFY_ONLY=0
 
 usage() {
   cat <<'USAGE'
-사용법: ./01-key-generation.sh [옵션]
+사용법: ./01-key-setup.sh [옵션]
 
   --name <label>    키 파일 이름 (기본: lab_groom) — <outdir>/<name>[.pub] 로 저장
   --outdir <dir>    저장 위치 (기본: ~/.ssh)
   --type <type>     ssh-keygen -t 값 (기본: ed25519)
   --comment <text>  키 코멘트 (기본: "<name>-<YYYYMM>")
-  --verify-only     생성 없이 기존 키 상태만 표시한다
+  --host <ip>       전송 대상 노드 (기본: 10.10.10.150)
+  --user <name>     원격 계정 (기본: groom)
+  --skip-transfer   생성만 하고 전송은 하지 않는다 (비밀번호 인증이 꺼져 있을 때)
+  --verify-only     생성·전송 없이 기존 키 상태만 표시한다
   -h, --help        도움말
 
-이미 있는 키를 재사용하려면 이 스크립트를 건너뛰고 그 파일의 .pub 을 바로
-03-ssh-keys.sh 에 넘긴다. 이 스크립트는 새 키를 만드는 경로만 다룬다.
+전송(scp)은 대상 노드의 비밀번호 인증이 켜져 있어야 동작한다
+(00-ssh-server.md --password-auth lan|on). 꺼져 있으면 --skip-transfer 로
+생성까지만 하고, 00-ssh-server.md 의 콘솔 붙여넣기 절차로 수동 전송한다.
 
-종료 코드: 0 성공 / 1 검증·생성 실패 / 2 인자 오류
+종료 코드: 0 성공 / 1 검증·생성·전송 실패 / 2 인자 오류
 USAGE
 }
 
@@ -56,17 +64,21 @@ die()  { printf '%s  [FAIL]%s %s\n' "$C_R" "$C_0" "$*" >&2; exit 1; }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --name)         KEY_NAME="${2:?}"; shift 2 ;;
-    --outdir)       OUTDIR="${2:?}"; shift 2 ;;
-    --type)         KEY_TYPE="${2:?}"; shift 2 ;;
-    --comment)      COMMENT="${2:?}"; shift 2 ;;
-    --verify-only)  VERIFY_ONLY=1; shift ;;
-    -h|--help)      usage; exit 0 ;;
-    *)              usage >&2; exit 2 ;;
+    --name)           KEY_NAME="${2:?}"; shift 2 ;;
+    --outdir)         OUTDIR="${2:?}"; shift 2 ;;
+    --type)           KEY_TYPE="${2:?}"; shift 2 ;;
+    --comment)        COMMENT="${2:?}"; shift 2 ;;
+    --host)           HOST="${2:?}"; shift 2 ;;
+    --user)           USER_NAME="${2:?}"; shift 2 ;;
+    --skip-transfer)  SKIP_TRANSFER=1; shift ;;
+    --verify-only)    VERIFY_ONLY=1; shift ;;
+    -h|--help)        usage; exit 0 ;;
+    *)                usage >&2; exit 2 ;;
   esac
 done
 
 KEYFILE="${OUTDIR}/${KEY_NAME}"
+TARGET="${USER_NAME}@${HOST}"
 [[ -n "$COMMENT" ]] || COMMENT="${KEY_NAME}-$(date +%Y%m)"
 
 # ── 검증 (생성 후 및 --verify-only 공용) ─────────────────────────────────────
@@ -111,17 +123,29 @@ chmod 600 "$KEYFILE"
 chmod 644 "${KEYFILE}.pub"
 ok "생성 완료"
 
-# ── 2. 검증 ─────────────────────────────────────────────────────────────────
 verify_all || die "검증 실패 — 위 항목을 확인한다."
+
+# ── 2. 노드로 전송 ───────────────────────────────────────────────────────────
+if [[ $SKIP_TRANSFER -eq 1 ]]; then
+  step "2. 전송 — 건너뜀 (--skip-transfer)"
+  warn "00-ssh-server.md 의 콘솔 붙여넣기 절차로 ${KEYFILE}.pub 을 직접 옮긴다."
+else
+  step "2. 노드로 전송 — 비밀번호를 입력한다 (${TARGET})"
+  if scp -q "${KEYFILE}.pub" "${TARGET}:~/$(basename "$KEYFILE").pub"; then
+    ok "전송 완료: ~/$(basename "$KEYFILE").pub (노드, ${TARGET})"
+  else
+    warn "전송 실패 — 비밀번호 인증이 꺼져 있으면 scp 자체가 안 된다."
+    warn "00-ssh-server.md 의 콘솔 붙여넣기 절차로 수동 전송한다."
+  fi
+fi
 
 step "완료 — 다음 단계"
 cat <<NEXT
-  공개키(.pub)만 노드로 옮긴다 — 개인키는 이 Mac 을 벗어나지 않는다.
+  노드에서 (콘솔 또는 비밀번호로 SSH 접속해서):
+    bash 02-ssh-keys.sh --authorized-key-file ~/$(basename "$KEYFILE").pub
 
-    ${KEYFILE}.pub
-
-  다음: 02-key-transfer.md 대로 위 .pub 을 노드로 옮긴 뒤,
-        노드에서 03-ssh-keys.sh 로 등록한다.
+  등록 후, 아직 첫 접속·지문 대조를 안 했다면 00-ssh-server.md 의 수동 접속
+  절차를 따른다.
 NEXT
 
 cat <<'RESIDUAL'
@@ -131,7 +155,10 @@ cat <<'RESIDUAL'
       계정 자체가 침해되면 이 키도 함께 침해된다.
     - 이미 있는 파일은 덮어쓰지 않는다(비파괴). 키를 교체하려면 --name 으로
       새 이름을 쓰고, 노드의 authorized_keys 에서 구 키를 수동으로 제거한다.
+    - 전송(scp)은 비밀번호 인증에 의존한다 — 부트스트랩 자격증명으로 쓰는
+      실습 지름길이다. 콘솔 붙여넣기와 달리 노드에 도착한 파일의 지문을 눈으로
+      대조하는 단계가 없다: scp 성공 자체를 신뢰의 근거로 삼는다.
     - 실습·랩 환경에서 개인키를 git 에 두어야 한다면: 가능하면 공개키만
       커밋하고(.gitignore 로 개인키 차단), 부득이하면 private 리포 + 이 노드
-      전용 폐기 가능한 키 + 03-ssh-keys.sh --restrict-cidr 조합을 쓴다.
+      전용 폐기 가능한 키 + 02-ssh-keys.sh --restrict-cidr 조합을 쓴다.
 RESIDUAL

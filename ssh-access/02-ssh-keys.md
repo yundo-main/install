@@ -1,17 +1,15 @@
-# 03 · SSH 키 등록
+# 02 · SSH 키 등록
 
 **요약.** 대상 노드에서 로컬로 실행해 사전에 준비한 공개키를 `authorized_keys`
 에 추가한다. 키 생성은 하지 않는다. `--restrict-cidr` 로 authorized_keys 의
 `from=` 제한을 걸 수 있다. sshd 정책은 [00-ssh-server.md](00-ssh-server.md) 소관.
 
 > **역할: 단계 문서.** 이 단계의 근거·실행·옵션·검증·잔여 위험을 한곳에 둔다.
-> 실행 도구는 [`03-ssh-keys.sh`](03-ssh-keys.sh). 키 생성은
-> [01-key-generation.md](01-key-generation.md)(Mac), 노드로 전달은
-> [02-key-transfer.md](02-key-transfer.md). sshd·방화벽·인증 정책은
-> [00-ssh-server.md](00-ssh-server.md). 클라이언트 측 검증은
-> [04-ssh-client.md](04-ssh-client.md).
+> 실행 도구는 [`02-ssh-keys.sh`](02-ssh-keys.sh). 키 생성·전달은
+> [01-key-setup.md](01-key-setup.md)(Mac). sshd·방화벽·인증 정책과 접속 검증은
+> [00-ssh-server.md](00-ssh-server.md)(수동 절차, 첫 SSH 접속·지문 대조 포함).
 
-`00-ssh-server.sh` 가 "누가·어떻게 인증할 수 있는가"(정책)를 정하고, 이 단계는
+`00-ssh-server.md` (수동 절차)가 "누가·어떻게 인증할 수 있는가"(정책)를 정하고, 이 단계는
 "이 공개키를 신뢰한다"(신원)를 등록한다. 둘을 분리한 이유: 정책은 노드마다 한 번
 고정되지만 키는 회전·추가·폐기가 그보다 잦다 — 방화벽·소켓 설정을 건드리지 않고
 키만 갱신할 수 있어야 한다.
@@ -20,16 +18,15 @@
 
 ## 실행
 
-이 단계의 전제는 [01-key-generation.md](01-key-generation.md) 로 `.pub` 파일이
-준비돼 있고, [02-key-transfer.md](02-key-transfer.md) 로 그 파일이 이미 노드에
-와 있는 것이다.
+이 단계의 전제는 [01-key-setup.md](01-key-setup.md) 로 `.pub` 파일이 이미
+노드에 와 있는 것이다.
 
 **노드에서:**
 ```bash
-bash 03-ssh-keys.sh --authorized-key-file ~/lab_groom.pub
+bash 02-ssh-keys.sh --authorized-key-file ~/lab_groom.pub
 
 # LAN 격리 대역 밖에서는 이 키를 무효화 (권장 — 특히 개인키를 git 에 둔 경우)
-bash 03-ssh-keys.sh --authorized-key-file ~/lab_groom.pub --restrict-cidr 10.10.10.0/24
+bash 02-ssh-keys.sh --authorized-key-file ~/lab_groom.pub --restrict-cidr 10.10.10.0/24
 ```
 
 ### 옵션
@@ -65,7 +62,7 @@ bash 03-ssh-keys.sh --authorized-key-file ~/lab_groom.pub --restrict-cidr 10.10.
 
 **노드에서:**
 ```bash
-bash 03-ssh-keys.sh --verify-only
+bash 02-ssh-keys.sh --verify-only
 ```
 ```
 검증 — /home/groom/.ssh 권한
@@ -86,16 +83,15 @@ ssh -o BatchMode=yes <user>@<VM IP> true && echo OK
 ## 잔여 위험 / 전제
 
 - 키를 생성하지 않는다. 개인키의 생성·보관·전달은
-  [01-key-generation.md](01-key-generation.md)·운영자 책임이다.
+  [01-key-setup.md](01-key-setup.md)·운영자 책임이다.
 - `--restrict-cidr` 는 authorized_keys 의 `from=` 만 건다. 개인키 자체의 비밀성은
   보장하지 않는다 — 유출 시 회전(이 노드의 `authorized_keys` 에서 제거)이 유일한 대응이다.
 - 옵션이 다른 동일 키가 이미 있으면 자동으로 병합·교체하지 않는다. 무제한 키가
   남아 있으면 `--restrict-cidr` 로 추가한 제한이 무의미해진다 — 스크립트가 이 경우
   경고만 하고 멈추지 않으므로, 출력의 "옵션 충돌" 건수를 반드시 확인한다.
-- `authorized_keys` 를 이 스크립트가 배타적으로 관리하지 않는다.
-  [04-ssh-client.md](04-ssh-client.md) 의 `ssh-copy-id` 경로가 같은 파일에 쓸 수
-  있다 — 위 옵션 충돌 검사로 걸러지지만, 두 경로를 섞어 쓰면 관리가 번거롭다.
-  콘솔 접근이 되면 이 스크립트로 통일한다.
+- `authorized_keys` 를 이 스크립트가 배타적으로 관리하지 않는다. 손으로
+  `ssh-copy-id` 등을 병행하면 같은 파일에 쓸 수 있다 — 위 옵션 충돌 검사로
+  걸러지지만, 콘솔 접근이 되면 이 스크립트로 통일한다.
 - 실습 키를 public 리포에 올리는 경우, `--restrict-cidr` 를 걸어도 리포 자체의
   노출(다른 실습·프로젝트로 키 재사용 등)까지 막지는 못한다. 키는 이 노드 묶음
   전용으로 두고 실습 종료 시 폐기한다.

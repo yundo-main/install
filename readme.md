@@ -114,16 +114,16 @@ README.md  →  단계 문서·주제 문서          (인덱스, 역참조 없�
 
 | 디렉터리 | README.md | 단계 문서 `NN-*.md` | 주제 문서 | 스크립트 |
 |---|---|---|---|---|
-| [ssh-access/](ssh-access/) | O | O (00–04, 02 는 문서만) | `controls.md` | 00, 03 |
+| [ssh-access/](ssh-access/) | O | O (00–02, 00 은 문서만) | `controls.md` | 02 |
 | [docker/](docker/) | O | O (00–02) | `compose-authoring.md`, `controls.md` | 00–01 |
 | [k8s/](k8s/) | — | `plan.md` (구 구조) | — | — |
 
-`ssh-access/` 의 노드 로컬(자기완결) 스크립트는 2개다 — `00-ssh-server.sh`
-(sshd·방화벽·인증 정책), `03-ssh-keys.sh`(authorized_keys 등록). 나머지는 macOS
-클라이언트에서 실행하는 도구다 — `01-key-generation.sh`(키 생성),
-`04-ssh-client.sh`(접속 검증). `02-key-transfer.md` 는 스크립트가 없다 —
-부트스트랩 이전이라 자동화할 채널 자체가 없는 수동 단계다
-(`docker/02-swarm-cluster.md` 와 같은 예외 사유).
+`ssh-access/` 는 실습용으로 스크립트 범위를 최소화했다 — 노드 로컬(자기완결)
+스크립트는 `02-ssh-keys.sh`(authorized_keys 등록) 하나뿐이다. `01-key-setup.sh`
+는 macOS 에서 실행해 키 생성 + 전송(비밀번호 인증 전제, 실습 지름길)까지만
+한다. `00-ssh-server.md` 는 스크립트가 아예 없다 — 서버 설정부터 Mac 첫
+접속·지문 대조까지 전 과정 수동이다(`docker/02-swarm-cluster.md` 와 같은
+범주의 예외).
 
 `docker/` 의 스크립트는 2개다 — `00-docker-ce.sh`(Docker CE), `01-compose.sh`
 (Compose). Swarm 구성은 `sudo` 비밀번호와 지문 육안 대조를 요구해 스크립트화하지

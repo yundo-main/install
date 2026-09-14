@@ -2,7 +2,7 @@
 
 `10.10.10.150` (Ubuntu VM) 에 접속되지 않을 때의 판별 절차.
 SSH 서버 구성은 [ssh-access/00-ssh-server.md](ssh-access/00-ssh-server.md),
-클라이언트 접속은 [ssh-access/04-ssh-client.md](ssh-access/04-ssh-client.md) 참조.
+클라이언트 접속은 [ssh-access/00-ssh-server.md](ssh-access/00-ssh-server.md) 5절 참조.
 
 ---
 
