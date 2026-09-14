@@ -6,9 +6,8 @@ Mac 을 벗어나지 않는다 — 노드로 가는 것은 `.pub`(공개키) 뿐
 
 > **역할: 단계 문서.** 이 단계의 근거·실행·옵션·검증·잔여 위험을 한곳에 둔다.
 > 실행 도구는 [`01-key-generation.sh`](01-key-generation.sh). 여기서 만든
-> `.pub` 을 등록하는 건 [02-ssh-keys.md](02-ssh-keys.md)(노드 로컬). 이후
-> 반복 발급이 필요하면 [04-issue-key.md](04-issue-key.md)(Mac)가 이 단계+등록+
-> 검증을 대신한다.
+> `.pub` 을 노드로 옮기는 건 [02-key-transfer.md](02-key-transfer.md), 등록은
+> [03-ssh-keys.md](03-ssh-keys.md)(노드 로컬).
 
 | 항목 | 값 |
 |---|---|
@@ -37,7 +36,7 @@ Mac 을 벗어나지 않는다 — 노드로 가는 것은 `.pub`(공개키) 뿐
 | `--verify-only` | 생성 없이 기존 키 상태만 표시 |
 
 이미 쓸 만한 키(`~/.ssh/id_rsa` 등)가 있다면 이 스크립트를 건너뛰고 그 `.pub`
-을 바로 [02-ssh-keys.md](02-ssh-keys.md) 에 넘겨도 된다 — 이 스크립트는
+을 바로 [03-ssh-keys.md](03-ssh-keys.md) 에 넘겨도 된다 — 이 스크립트는
 "이 노드 묶음 전용 키가 필요할 때"를 위한 것이다.
 
 ---
@@ -72,7 +71,7 @@ Mac 을 벗어나지 않는다 — 노드로 가는 것은 `.pub`(공개키) 뿐
   계정 자체가 침해되면 이 키도 함께 침해된다.
 - 이미 있는 파일은 덮어쓰지 않는다. 키를 교체하려면 `--name` 으로 새 이름을
   쓰고, 노드의 `authorized_keys` 에서 구 키를 수동으로 제거한다
-  ([02-ssh-keys.md](02-ssh-keys.md) 참조 — 이 스크립트는 등록·폐기를 하지 않는다).
+  ([03-ssh-keys.md](03-ssh-keys.md) 참조 — 이 스크립트는 등록·폐기를 하지 않는다).
 - 실습·랩 환경에서 개인키를 git 에 두어야 한다면:
   - 가능하면 **공개키만** 커밋한다(`keys/*.pub`). `.gitignore` 로 개인키
     확장자/이름을 차단한다.
@@ -82,5 +81,5 @@ Mac 을 벗어나지 않는다 — 노드로 가는 것은 `.pub`(공개키) 뿐
     !keys/*.pub
     ```
   - 개인키까지 커밋해야 하면: private 리포 + 이 노드 전용 폐기 가능한 키 +
-    [02-ssh-keys.md](02-ssh-keys.md) 의 `--restrict-cidr` 필수.
+    [03-ssh-keys.md](03-ssh-keys.md) 의 `--restrict-cidr` 필수.
   - gitleaks/git-secrets 를 pre-commit 훅으로 걸어 실수 커밋을 물리적으로 막는다.

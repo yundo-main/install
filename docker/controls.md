@@ -41,4 +41,4 @@ SSH 관련 대조 상수(호스트 키 지문, 격리 대역)는
 | Raft 로그 시크릿 디스크 평문 (autolock 미적용) | [02-swarm-cluster.md](02-swarm-cluster.md) |
 | 가입 토큰 argv (`/proc/<pid>/cmdline`) 노출 | [02-swarm-cluster.md](02-swarm-cluster.md) |
 | overlay 기본 비암호화 | [02-swarm-cluster.md](02-swarm-cluster.md) |
-| 복제 VM 호스트 키·machine-id 승계 | [02-swarm-cluster.md](02-swarm-cluster.md) (SSH 재대조는 [../ssh-access/03-ssh-client.md](../ssh-access/03-ssh-client.md)) |
+| 복제 VM 호스트 키·machine-id 승계 | [02-swarm-cluster.md](02-swarm-cluster.md) (SSH 재대조는 [../ssh-access/04-ssh-client.md](../ssh-access/04-ssh-client.md)) |

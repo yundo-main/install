@@ -9,15 +9,16 @@
 
 | 통제 | 내용 | 근거 문서 |
 |---|---|---|
-| **지문 대조 후 신뢰** | 호스트 키는 기대 지문과 대조한 뒤에만 `known_hosts` 에 넣는다. 불일치 시 중단 | [00-ssh-server.md](00-ssh-server.md) · [03-ssh-client.md](03-ssh-client.md) |
-| **무검증 TOFU 금지** | `--yes` 는 `--expect-fpr` 없이는 동작하지 않는다 | [03-ssh-client.md](03-ssh-client.md) |
-| **순서 강제** | 키 인증 검증이 성공하지 않으면 비밀번호 인증을 차단하지 않는다 | [00-ssh-server.md](00-ssh-server.md) · [03-ssh-client.md](03-ssh-client.md) |
+| **지문 대조 후 신뢰** | 호스트 키는 기대 지문과 대조한 뒤에만 `known_hosts` 에 넣는다. 불일치 시 중단 | [00-ssh-server.md](00-ssh-server.md) · [04-ssh-client.md](04-ssh-client.md) |
+| **무검증 TOFU 금지** | `--yes` 는 `--expect-fpr` 없이는 동작하지 않는다 | [04-ssh-client.md](04-ssh-client.md) |
+| **순서 강제** | 키 인증 검증이 성공하지 않으면 비밀번호 인증을 차단하지 않는다 | [00-ssh-server.md](00-ssh-server.md) · [04-ssh-client.md](04-ssh-client.md) |
 | **zero-trust 기본값** | 인자 없이 실행 시 publickey 전용 + `ufw deny incoming`. 완화는 명시적 플래그로만 | [00-ssh-server.md](00-ssh-server.md) |
 | **범위 한정** | 비밀번호 인증·22/tcp 는 기본적으로 LAN 격리 대역(`10.10.10.0/24`)으로 한정 | [00-ssh-server.md](00-ssh-server.md) |
 | **개인키는 생성한 Mac 을 벗어나지 않는다** | 노드로 전송되는 것은 `.pub`(공개키) 뿐이다 | [01-key-generation.md](01-key-generation.md) |
 | **비파괴 키 생성** | 대상 파일이 이미 있으면 덮어쓰지 않고 중단한다 | [01-key-generation.md](01-key-generation.md) |
-| **키 배치와 정책의 분리** | authorized_keys(신원)와 sshd 정책(방화벽·인증 규칙)을 다른 스크립트가 관리한다 — 회전·추가 시 방화벽을 건드리지 않는다 | [02-ssh-keys.md](02-ssh-keys.md) |
-| **비파괴 키 등록** | 옵션이 다른 동일 키가 있으면 자동으로 바꿔 쓰지 않고 경고한다 | [02-ssh-keys.md](02-ssh-keys.md) |
+| **전달 후 지문 재대조** | 노드에 도착한 `.pub` 의 지문을 Mac 에서 만든 원본과 대조한 뒤에만 다음 단계로 넘어간다 | [02-key-transfer.md](02-key-transfer.md) |
+| **키 배치와 정책의 분리** | authorized_keys(신원)와 sshd 정책(방화벽·인증 규칙)을 다른 스크립트가 관리한다 — 회전·추가 시 방화벽을 건드리지 않는다 | [03-ssh-keys.md](03-ssh-keys.md) |
+| **비파괴 키 등록** | 옵션이 다른 동일 키가 있으면 자동으로 바꿔 쓰지 않고 경고한다 | [03-ssh-keys.md](03-ssh-keys.md) |
 | **상태 기반 검증** | 설정 파일이 아니라 `sshd -T`·`ufw status`·`ssh -v` 의 실제 상태로 확인 | 전 단계 |
 
 ## 대조 상수
@@ -32,10 +33,10 @@
 | 위험 | 상세 |
 |---|---|
 | 비밀번호 인증 무차별 대입 표면 (OpenSSH 9.6, `PerSourcePenalties` 없음) | [00-ssh-server.md](00-ssh-server.md) |
-| macOS 앱 단위 로컬 네트워크 권한 — 앱마다 차단/timeout | [03-ssh-client.md](03-ssh-client.md) · [../network-troubleshooting.md](../network-troubleshooting.md) |
-| `~/.ssh/id_rsa` 파일명과 실제 키 타입 불일치 | [03-ssh-client.md](03-ssh-client.md) |
+| macOS 앱 단위 로컬 네트워크 권한 — 앱마다 차단/timeout | [04-ssh-client.md](04-ssh-client.md) · [../network-troubleshooting.md](../network-troubleshooting.md) |
+| `~/.ssh/id_rsa` 파일명과 실제 키 타입 불일치 | [04-ssh-client.md](04-ssh-client.md) |
 | `wget` 스크립트 전달 = 공급망 주입 지점 | [00-ssh-server.md](00-ssh-server.md) |
 | 개인키를 git 에 두는 경우의 노출 범위 | [01-key-generation.md](01-key-generation.md) |
 | 무암호 개인키 — Mac 계정 침해 시 파일 권한(600)이 유일한 방어선 | [01-key-generation.md](01-key-generation.md) |
-| `authorized_keys` 옵션 충돌(무제한 키 잔존) 미자동 정리 | [02-ssh-keys.md](02-ssh-keys.md) |
-| `04-issue-key.sh` 는 신뢰를 생성하지 않고 증폭한다 — 부트스트랩 자격증명이 침해돼 있으면 신규 발급 키도 그 침해를 물려받는다 | [04-issue-key.md](04-issue-key.md) |
+| 콘솔 클립보드/스크롤백에 공개키가 남을 수 있음 | [02-key-transfer.md](02-key-transfer.md) |
+| `authorized_keys` 옵션 충돌(무제한 키 잔존) 미자동 정리 | [03-ssh-keys.md](03-ssh-keys.md) |

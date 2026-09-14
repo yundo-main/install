@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# 02-ssh-keys.sh — 대상 노드에서 로컬로 실행해 공개키를 authorized_keys 에
-# 등록한다. 근거·기대 출력·사용법은 02-ssh-keys.md 에 있다.
+# 03-ssh-keys.sh — 대상 노드에서 로컬로 실행해 공개키를 authorized_keys 에
+# 등록한다. 근거·기대 출력·사용법은 03-ssh-keys.md 에 있다.
 # 실행 위치: Ubuntu 24.04 VM 게스트 콘솔 또는 로컬 세션 (SSH·클라이언트 불필요)
 #
 # 설계 원칙
@@ -14,11 +14,11 @@
 #     한정하는 옵션을 기본 제공한다 (authorized_keys 의 from= 제한).
 #
 # 관계: 00-ssh-server.sh 가 sshd·방화벽·인증 정책을, 01-key-generation.sh(Mac)가
-#       키 생성을, 03-ssh-client.sh 가 클라이언트 측 호스트 키 대조·접속 검증을
+#       키 생성을, 04-ssh-client.sh 가 클라이언트 측 호스트 키 대조·접속 검증을
 #       담당한다. 이 스크립트는 그 사이 — "이 공개키로 로그인을 허용한다"만 다룬다.
 #
-# 역할: 실행 도구. 절차의 근거·기대 출력·사용법은 02-ssh-keys.md 에 있다.
-#       여기에 절차 설명을 복제하지 않는다. 코드가 02-ssh-keys.md 와 어긋나면
+# 역할: 실행 도구. 절차의 근거·기대 출력·사용법은 03-ssh-keys.md 에 있다.
+#       여기에 절차 설명을 복제하지 않는다. 코드가 03-ssh-keys.md 와 어긋나면
 #       문서가 기준이다. 게스트에서 단독 실행되므로 자기완결적이어야 한다.
 #
 set -euo pipefail
@@ -31,7 +31,7 @@ VERIFY_ONLY=0
 
 usage() {
   cat <<'USAGE'
-사용법: bash 02-ssh-keys.sh --authorized-key-file <path> [옵션]
+사용법: bash 03-ssh-keys.sh --authorized-key-file <path> [옵션]
 
   --authorized-key-file <path>  호출 계정 ~/.ssh/authorized_keys 에 추가할 공개키
                                   파일 (여러 줄 가능). 키 문자열을 인자로 받지
@@ -105,7 +105,7 @@ step "0. 사전 요건"
 
 [[ "$(id -u)" -ne 0 ]] || die "root 로 직접 실행하지 않는다. sudo 권한을 가진 일반 계정으로 실행한다."
 [[ "$(uname -s)" == "Linux" ]] \
-  || die "이 스크립트는 대상 노드(Linux)에서 실행한다. macOS 클라이언트 설정은 03-ssh-client.sh."
+  || die "이 스크립트는 대상 노드(Linux)에서 실행한다. macOS 클라이언트 설정은 04-ssh-client.sh."
 
 if [[ $VERIFY_ONLY -eq 1 ]]; then
   verify_all && { step "검증 통과"; exit 0; } || die "검증 실패"
@@ -162,7 +162,7 @@ cat <<NEXT
     ssh <user>@<이 VM IP> true && echo OK
 
   아직 안 됐으면 00-ssh-server.sh 로 sshd·방화벽·인증 정책을 먼저 구성했는지,
-  03-ssh-client.sh 로 호스트 키 지문을 대조했는지 확인한다.
+  04-ssh-client.sh 로 호스트 키 지문을 대조했는지 확인한다.
 NEXT
 
 cat <<'RESIDUAL'
@@ -177,6 +177,6 @@ cat <<'RESIDUAL'
       키(from= 없음)가 남아 있으면 --restrict-cidr 로 추가한 제한이 무의미해진다 —
       conflicts 경고가 뜨면 직접 정리한다.
     - authorized_keys 자체는 이 스크립트가 유일하게 관리하지 않는다. 다른 도구
-      (ssh-copy-id 등)가 같은 파일에 쓸 수 있다 — 03-ssh-client.sh 의 ssh-copy-id
+      (ssh-copy-id 등)가 같은 파일에 쓸 수 있다 — 04-ssh-client.sh 의 ssh-copy-id
       경로와 병행 사용 시 위 옵션 충돌 검사로 걸러진다.
 RESIDUAL

@@ -6,14 +6,14 @@
 #
 # 설계 원칙
 #   - 개인키는 이 스크립트를 실행한 Mac 을 벗어나지 않는다. 노드로 가는 것은
-#     02-ssh-keys.sh 에 넘기는 .pub(공개키) 뿐이다.
+#     03-ssh-keys.sh 에 넘기는 .pub(공개키) 뿐이다.
 #   - 비파괴: 대상 파일이 이미 있으면 덮어쓰지 않고 중단한다. 새 키가 필요하면
 #     --name 으로 다른 이름을 쓴다.
 #   - 기본은 무암호(-N '') 자동화 키다 — 파일 시스템 권한(600)이 유일한 방어선
 #     이라는 것을 잔여 위험에 명시한다.
 #
-# 관계: 여기서 만든 .pub 을 02-ssh-keys.sh(노드 로컬)로 등록한다. 이후 반복
-#       발급이 필요하면 04-issue-key.sh(Mac)가 이 단계+등록+검증을 대신한다.
+# 관계: 여기서 만든 .pub 을 02-key-transfer.md(스크립트 없음)로 노드에 옮기고
+#       03-ssh-keys.sh(노드 로컬)로 등록한다.
 #
 # 역할: 실행 도구. 절차의 근거·기대 출력·사용법은 01-key-generation.md 에 있다.
 #       여기에 절차 설명을 복제하지 않는다. 코드가 문서와 어긋나면 문서가 기준이다.
@@ -38,7 +38,7 @@ usage() {
   -h, --help        도움말
 
 이미 있는 키를 재사용하려면 이 스크립트를 건너뛰고 그 파일의 .pub 을 바로
-02-ssh-keys.sh 에 넘긴다. 이 스크립트는 새 키를 만드는 경로만 다룬다.
+03-ssh-keys.sh 에 넘긴다. 이 스크립트는 새 키를 만드는 경로만 다룬다.
 
 종료 코드: 0 성공 / 1 검증·생성 실패 / 2 인자 오류
 USAGE
@@ -120,8 +120,8 @@ cat <<NEXT
 
     ${KEYFILE}.pub
 
-  노드로 전달(git clone, wget, 공유 폴더, 콘솔 붙여넣기 중 택1) 후, 노드에서:
-    bash 02-ssh-keys.sh --authorized-key-file ~/$(basename "$KEYFILE").pub
+  다음: 02-key-transfer.md 대로 위 .pub 을 노드로 옮긴 뒤,
+        노드에서 03-ssh-keys.sh 로 등록한다.
 NEXT
 
 cat <<'RESIDUAL'
@@ -133,5 +133,5 @@ cat <<'RESIDUAL'
       새 이름을 쓰고, 노드의 authorized_keys 에서 구 키를 수동으로 제거한다.
     - 실습·랩 환경에서 개인키를 git 에 두어야 한다면: 가능하면 공개키만
       커밋하고(.gitignore 로 개인키 차단), 부득이하면 private 리포 + 이 노드
-      전용 폐기 가능한 키 + 02-ssh-keys.sh --restrict-cidr 조합을 쓴다.
+      전용 폐기 가능한 키 + 03-ssh-keys.sh --restrict-cidr 조합을 쓴다.
 RESIDUAL

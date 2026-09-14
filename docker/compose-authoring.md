@@ -149,7 +149,7 @@ Docker 는 자체 iptables 규칙을 `DOCKER` 체인에 삽입한다. 이 규칙
 체인 정책보다 먼저 평가되므로, **`ufw deny` 상태에서도 `0.0.0.0` 으로 공개한 포트는
 LAN 에 노출된다.** 방화벽으로 막았다고 가정하면 안 된다.
 
-Mac 에서의 접근은 SSH 포트 포워딩을 쓴다 ([../ssh-access/03-ssh-client.md](../ssh-access/03-ssh-client.md) 접속 방법).
+Mac 에서의 접근은 SSH 포트 포워딩을 쓴다 ([../ssh-access/04-ssh-client.md](../ssh-access/04-ssh-client.md) 접속 방법).
 
 ```bash
 ssh -L 8080:localhost:8080 groom@10.10.10.150

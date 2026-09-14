@@ -2,12 +2,12 @@
 
 **요약.** 대상 노드에서 로컬로 실행해 openssh-server 설치·소켓 활성화 해제
 (`ssh.service` 고정)·ufw(22/tcp 만 LAN 허용)·sshd 인증 정책(기본 publickey 전용)을
-구성한다. 공개키 등록은 [02-ssh-keys.md](02-ssh-keys.md) 소관. SSH·클라이언트 불필요.
+구성한다. 공개키 등록은 [03-ssh-keys.md](03-ssh-keys.md) 소관. SSH·클라이언트 불필요.
 
 > **역할: 단계 문서.** 이 단계의 근거·실행·옵션·기대 출력·검증·잔여 위험을 한곳에 둔다.
 > 실행 도구는 [`00-ssh-server.sh`](00-ssh-server.sh). 디렉터리 구성은 [README.md](README.md).
-> 공개키 등록은 [02-ssh-keys.md](02-ssh-keys.md). 클라이언트 측(지문 대조·
-> `known_hosts`·`~/.ssh/config`)은 [03-ssh-client.md](03-ssh-client.md).
+> 공개키 등록은 [03-ssh-keys.md](03-ssh-keys.md). 클라이언트 측(지문 대조·
+> `known_hosts`·`~/.ssh/config`)은 [04-ssh-client.md](04-ssh-client.md).
 
 대상 노드에서 **로컬로** 실행한다 (게스트 콘솔 또는 로컬 세션). SSH·클라이언트가
 필요 없다. macOS 의 앱 단위 로컬 네트워크 권한 때문에 클라이언트에서 sshd 설정을
@@ -35,7 +35,7 @@ bash 00-ssh-server.sh --password-auth lan
 ```
 
 공개키가 아직 없어도 이 스크립트는 완결된다 — 로그인 가능 여부는
-[02-ssh-keys.md](02-ssh-keys.md) 가 결정한다. `--password-auth off`(기본) 로 두고
+[03-ssh-keys.md](03-ssh-keys.md) 가 결정한다. `--password-auth off`(기본) 로 두고
 아직 키를 안 넣었다면, 이 세션(콘솔)이 유일한 접근 경로임을 유의한다.
 
 ### 스크립트 전달
@@ -82,7 +82,7 @@ private 리포면 `gh api ...` 또는 `wget --header="Authorization: Bearer <tok
 | `--verify-only` | 설치·변경 없이 유효 상태만 검증 |
 
 공개키 등록(`authorized_keys`)은 이 스크립트가 아니라
-[02-ssh-keys.sh](02-ssh-keys.sh) 가 한다.
+[03-ssh-keys.sh](03-ssh-keys.sh) 가 한다.
 
 ---
 
@@ -165,7 +165,7 @@ sudo ss -tlnp | grep ':22 '
 # 방화벽
 sudo ufw status verbose
 
-# 호스트 키 지문 — 이 값을 받아 적어 03-ssh-client.md 에서 대조한다
+# 호스트 키 지문 — 이 값을 받아 적어 04-ssh-client.md 에서 대조한다
 ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
 ```
 
@@ -206,4 +206,4 @@ Status: active   Default: deny (incoming), allow (outgoing)
   에서 지문을 재대조한다.
 - 인자 없이 실행하면 `authorized_keys` 는 그대로다. 이 노드에 아직 어떤 공개키도
   등록돼 있지 않다면, 이 스크립트를 실행한 콘솔 세션 자체가 유일한 접근 경로다 —
-  [02-ssh-keys.md](02-ssh-keys.md) 를 이어서 실행한다.
+  [03-ssh-keys.md](03-ssh-keys.md) 를 이어서 실행한다.
